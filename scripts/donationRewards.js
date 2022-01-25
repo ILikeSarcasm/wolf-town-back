@@ -25,8 +25,6 @@ donationContract.methods.funders(0).call((err, result) => {
     var funders = {};
     var rewards = {};
 
-    console.log("Results:", result);
-
     result[0].forEach((address, i) => {
         funders[address] = funders[address] ? funders[address] + parseInt(result[1][i]) : parseInt(result[1][i]);
     });

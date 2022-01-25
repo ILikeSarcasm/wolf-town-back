@@ -1,4 +1,4 @@
-[
+const bodyPartsData = [
   [
     {
       "name": "Survivor",
@@ -538,4 +538,6 @@
       "png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAgMAAAAOFJJnAAAACVBMVEUAAAAAAAD ///+D3c/SAAAAAXRSTlMAQObYZgAAACdJREFUGNNjGESADUwyOTCwQPgO+EQEwAwgFQFhtIY2QBgcHdR0EwB3ZAPDpQXUNQAAAABJRU5ErkJggg=="
     }
   ]
-]
+];
+
+export default bodyPartsData;
