@@ -1,5 +1,5 @@
 .env
-.env.testnet
+.env.dev
 
 package-lock.json
 /node_modules
