@@ -6,6 +6,7 @@
     "ethereumjs-tx": "^2.1.2",
     "ethers": "^5.5.3",
     "express": "^4.17.2",
+    "images": "^3.2.3",
     "web3": "^1.7.0"
   }
 }
