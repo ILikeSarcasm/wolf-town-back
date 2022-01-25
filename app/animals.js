@@ -1,7 +1,6 @@
 import Web3 from 'web3';
-import oldTraitsABI from './../abi/oldTraits.abi.js';
 
-export function fetchOldTraits(req, res) {
+export function tokenURI(id, req, res) {
     var web3 = new Web3(process.env.RPC_PROVIDER);
     const address = process.env.OLD_TRAITS_CONTRACT;
     const contract = new web3.eth.Contract(oldTraitsABI, address);
@@ -14,6 +13,6 @@ export function fetchOldTraits(req, res) {
     });
 }
 
-const animals = { fetchOldTraits };
+const animals = { tokenURI };
 
 export default animals;

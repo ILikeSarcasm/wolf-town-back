@@ -1,9 +1,7 @@
-import dotenv from 'dotenv';
+import './config.js';
 import express from 'express';
 // import bodyParser from 'body-parser'; // Used for POST request
 import router from './router.js';
-
-dotenv.config();
 
 const app = express();
 app.use(express.static('public'));

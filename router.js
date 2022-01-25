@@ -3,6 +3,6 @@ import animals from './app/animals.js';
 
 const router = express.Router();
 
-router.get('/fetchOldTraits', (req, res, next) => animals.fetchOldTraits(req, res));
+router.get('/animals/:id', (req, res, next) => animals.tokenURI(req.params.id, req, res));
 
 export default router;
