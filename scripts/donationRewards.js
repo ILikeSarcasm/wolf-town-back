@@ -9,7 +9,11 @@ import donationABI from './../abi/donation.abi.js';
 import wtwoolABI from './../abi/wtwool.abi.js';
 
 const web3 = new Web3(process.env.RPC_PROVIDER);
-const chain = Common.default.forCustomChain('mainnet', { name: 'testnet', networkId: 97, chainId: 97 }, 'petersburg');
+const chain = Common.default.forCustomChain(process.env.CHAIN_NAME, {
+    name: process.env.CHAIN_NAME,
+    networkId: process.env.CHAIN_ID,
+    chainId: process.env.CHAIN_ID
+}, 'petersburg');
 
 const account = process.env.WALLET_PUBLIC_KEY;
 const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY, 'hex');
