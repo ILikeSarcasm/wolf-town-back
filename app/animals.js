@@ -34,7 +34,7 @@ export async function tokenURI(tokenID, req, res) {
     }
 }
 
-export async function generateTokenImage(tokenID, traits) {
+export function generateTokenImage(tokenID, traits) {
     var bodyPartsPath = `${process.cwd()}/public/images/bodyParts/`;
     var tokenImagePath = `${process.cwd()}/public/images/wtanimals/${tokenID}.png`;
 
