@@ -47,7 +47,7 @@ donationContract.methods.funders(0).call((err, result) => {
             to: wtwoolAddress,
             gasLimit: web3.utils.toHex(8000000),
             gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
-            data: wtwoolContract.methods.mintToMany(Object.keys(rewards), Object.values(rewards)).encodeABI()
+            data: wtwoolContract.methods.transferToMany(Object.keys(rewards), Object.values(rewards)).encodeABI()
         };
 
         const tx = new Tx.Transaction(txObject, { common: chain });
