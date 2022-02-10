@@ -13,9 +13,9 @@ if (process.env.ENVIRONMENT == 'dev') {
     app.use('/debug', routerDebug);
 }
 
-app.listen(process.env.PORT || 3000, function(err) {
+app.listen(process.env.PORT, function(err) {
     if(err) { console.log(err); }
-    console.log("Server listening on port", process.env.PORT || 3000);
+    console.log(`Server listening on port ${process.env.PORT} in ${process.env.ENVIRONMENT} mode.`);
 });
 
 export default app;
