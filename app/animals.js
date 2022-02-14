@@ -23,22 +23,22 @@ export function tokenURI(tokenID, req, res) {
 
                 var tokenImagePath = await generateTokenImage(tokenID, result);
                 var base64 = new Buffer(fs.readFileSync(`${process.cwd()}/public/images/wtanimalsSmall/${tokenID}.png`)).toString('base64');
-
+console.log(result)
                 var json = {
                     name: `${result.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
                     description: 'Wolf Town NFT collection.',
                     image: `${process.env.URL}images/animals/${tokenID}.png`,
                     imageSmall: `data:image/svg+xml;base64,${base64}`,
                     attributes: [
-                        { trait_type: 'fur', value: bodyPartsData[1][parseInt(result['fur'])].name },
+                        { trait_type: 'fur', value: bodyPartsData[result.isSheep ? 0 : 9][parseInt(result['fur'])].name },
                         { trait_type: 'head', value: bodyPartsData[1][parseInt(result['head'])].name },
-                        { trait_type: 'ears', value: bodyPartsData[1][parseInt(result['ears'])].name },
-                        { trait_type: 'eyes', value: bodyPartsData[1][parseInt(result['eyes'])].name },
-                        { trait_type: 'nose', value: bodyPartsData[1][parseInt(result['nose'])].name },
-                        { trait_type: 'mouth', value: bodyPartsData[1][parseInt(result['mouth'])].name },
-                        { trait_type: 'neck', value: bodyPartsData[1][parseInt(result['neck'])].name },
-                        { trait_type: 'feet', value: bodyPartsData[1][parseInt(result['feet'])].name },
-                        { trait_type: 'alpha', value: bodyPartsData[1][parseInt(result['alpha'])].name }
+                        { trait_type: 'ears', value: bodyPartsData[2][parseInt(result['ears'])].name },
+                        { trait_type: 'eyes', value: bodyPartsData[result.isSheep ? 3 : 12][parseInt(result['eyes'])].name },
+                        { trait_type: 'nose', value: bodyPartsData[result.isSheep ? 4 : 14][parseInt(result['nose'])].name },
+                        { trait_type: 'mouth', value: bodyPartsData[5][parseInt(result['mouth'])].name },
+                        { trait_type: 'neck', value: result.isSheep ? "None" : bodyPartsData[15][parseInt(result['neck'])].name },
+                        { trait_type: 'feet', value: bodyPartsData[7][parseInt(result['feet'])].name },
+                        { trait_type: 'alpha', value: result.isSheep ? "None" : bodyPartsData[10][parseInt(result['alpha'])].name }
                     ]
                 };
 
@@ -98,8 +98,7 @@ export function generateTokenImage(tokenID, traits) {
                         { input: `${bodyPartsPath}12/${bodyPartsData[12][parseInt(traits.eyes)].name}.png` },
                         { input: `${bodyPartsPath}14/${bodyPartsData[14][parseInt(traits.nose)].name}.png` },
                         { input: `${bodyPartsPath}15/${bodyPartsData[15][parseInt(traits.neck)].name}.png` },
-                        { input: `${bodyPartsPath}10/${bodyPartsData[10][parseInt(traits.alpha)].name}.png` },
-                        { input: `${bodyPartsPath}7/${bodyPartsData[7][parseInt(traits.feet)].name}.png` }
+                        { input: `${bodyPartsPath}10/${bodyPartsData[10][parseInt(traits.alpha)].name}.png` }
                     ])
                     .toFile(tokenSmallImagePath)
                     .then(() => {

@@ -1,7 +1,7 @@
 .env
 .env.dev
 
-/public/images/wtanimals/*
+/public/images/animals/*
 /public/images/wtanimalsSmall/*
 /public/metadata/*
 
