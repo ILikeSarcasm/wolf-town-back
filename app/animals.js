@@ -67,6 +67,7 @@ export function tokenURI(tokenID, req, res) {
 
 export function generateTokenImage(tokenID, traits) {
     return new Promise( (resolve, reject) => {
+        var wtanimalsLogo = `${process.cwd()}/public/images/wtanimalsLogo.png`;
         var bodyPartsPath = `${process.cwd()}/public/images/bodyParts/`;
         var tokenImagePath = `${process.cwd()}/public/images/wtanimals/${tokenID}.png`;
         var tokenSmallImagePath = `${process.cwd()}/public/images/wtanimalsSmall/${tokenID}.png`;
@@ -87,6 +88,7 @@ export function generateTokenImage(tokenID, traits) {
                     .then(() => {
                         sharp(tokenSmallImagePath)
                             .resize({ width: 320, height: 320, kernel: 'nearest' })
+                            .composite([ { input: wtanimalsLogo } ])
                             .toFile(tokenImagePath)
                             .then(() => resolve(tokenImagePath));
                     });
@@ -96,12 +98,14 @@ export function generateTokenImage(tokenID, traits) {
                         { input: `${bodyPartsPath}12/${bodyPartsData[12][parseInt(traits.eyes)].name}.png` },
                         { input: `${bodyPartsPath}14/${bodyPartsData[14][parseInt(traits.nose)].name}.png` },
                         { input: `${bodyPartsPath}15/${bodyPartsData[15][parseInt(traits.neck)].name}.png` },
-                        { input: `${bodyPartsPath}10/${bodyPartsData[10][parseInt(traits.alpha)].name}.png` }
+                        { input: `${bodyPartsPath}10/${bodyPartsData[10][parseInt(traits.alpha)].name}.png` },
+                        { input: `${bodyPartsPath}7/${bodyPartsData[7][parseInt(traits.feet)].name}.png` }
                     ])
                     .toFile(tokenSmallImagePath)
                     .then(() => {
                         sharp(tokenSmallImagePath)
                             .resize({ width: 320, height: 320, kernel: 'nearest' })
+                            .composite([ { input: wtanimalsLogo } ])
                             .toFile(tokenImagePath)
                             .then(() => resolve(tokenImagePath));
                     });
