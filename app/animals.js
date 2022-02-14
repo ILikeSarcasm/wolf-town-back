@@ -27,18 +27,18 @@ export function tokenURI(tokenID, req, res) {
                 var json = {
                     name: `${result.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
                     description: 'Wolf Town NFT collection.',
-                    image: `${process.env.URL}images/wtanimals/${tokenID}.png`,
+                    image: `${process.env.URL}images/animals/${tokenID}.png`,
                     imageSmall: `data:image/svg+xml;base64,${base64}`,
                     attributes: [
-                        { trait_type: 'fur', value: result['fur'] },
-                        { trait_type: 'head', value: result['head'] },
-                        { trait_type: 'ears', value: result['ears'] },
-                        { trait_type: 'eyes', value: result['eyes'] },
-                        { trait_type: 'nose', value: result['nose'] },
-                        { trait_type: 'mouth', value: result['mouth'] },
-                        { trait_type: 'neck', value: result['neck'] },
-                        { trait_type: 'feet', value: result['feet'] },
-                        { trait_type: 'alpha', value: result['alpha'] }
+                        { trait_type: 'fur', value: bodyPartsData[1][parseInt(result['fur'])].name },
+                        { trait_type: 'head', value: bodyPartsData[1][parseInt(result['head'])].name },
+                        { trait_type: 'ears', value: bodyPartsData[1][parseInt(result['ears'])].name },
+                        { trait_type: 'eyes', value: bodyPartsData[1][parseInt(result['eyes'])].name },
+                        { trait_type: 'nose', value: bodyPartsData[1][parseInt(result['nose'])].name },
+                        { trait_type: 'mouth', value: bodyPartsData[1][parseInt(result['mouth'])].name },
+                        { trait_type: 'neck', value: bodyPartsData[1][parseInt(result['neck'])].name },
+                        { trait_type: 'feet', value: bodyPartsData[1][parseInt(result['feet'])].name },
+                        { trait_type: 'alpha', value: bodyPartsData[1][parseInt(result['alpha'])].name }
                     ]
                 };
 
@@ -69,7 +69,7 @@ export function generateTokenImage(tokenID, traits) {
     return new Promise( (resolve, reject) => {
         var wtanimalsLogo = `${process.cwd()}/public/images/wtanimalsLogo.png`;
         var bodyPartsPath = `${process.cwd()}/public/images/bodyParts/`;
-        var tokenImagePath = `${process.cwd()}/public/images/wtanimals/${tokenID}.png`;
+        var tokenImagePath = `${process.cwd()}/public/images/animals/${tokenID}.png`;
         var tokenSmallImagePath = `${process.cwd()}/public/images/wtanimalsSmall/${tokenID}.png`;
 
         if (!fs.existsSync(tokenImagePath)) {
