@@ -76,8 +76,7 @@ export function generateTokenImage(tokenID, traits) {
         try {
             if (traits.isSheep) {
                 images(`${bodyPartsPath}0/${bodyPartsData[0][parseInt(traits.fur)].name}.png`)
-                    // WHITE CAP IS BUGGED (19)
-                    .draw(images(`${bodyPartsPath}1/${bodyPartsData[1][parseInt(traits.head) != 19 ? parseInt(traits.head) : 0].name}.png`), 0, 0)
+                    .draw(images(`${bodyPartsPath}1/${bodyPartsData[1][parseInt(traits.head)].name}.png`), 0, 0)
                     // GOLD EARS ARE BUGGED (3, 4, 5)
                     .draw(images(`${bodyPartsPath}2/${bodyPartsData[2][[3, 4, 5].indexOf(parseInt(traits.ears)) == -1 ? parseInt(traits.ears) : 0].name}.png`), 0, 0)
                     .draw(images(`${bodyPartsPath}3/${bodyPartsData[3][parseInt(traits.eyes)].name}.png`), 0, 0)
