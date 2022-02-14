@@ -27,9 +27,8 @@ export function tokenURI(tokenID, req, res) {
                 var json = {
                     name: `${result.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
                     description: 'Wolf Town NFT collection.',
-                    image: `data:image/svg+xml;base64,${base64}`,
-                    // image: `${process.env.URL}images/wtanimals/${tokenID}.png`,
-                    imageSmall: `${process.env.URL}images/wtanimalsSmall/${tokenID}.png`,
+                    image: `${process.env.URL}images/wtanimals/${tokenID}.png`,
+                    imageSmall: `data:image/svg+xml;base64,${base64}`,
                     attributes: [
                         { trait_type: 'fur', value: result['fur'] },
                         { trait_type: 'head', value: result['head'] },
