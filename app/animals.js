@@ -1,5 +1,5 @@
 import fs from 'fs';
-import images from 'images';
+import sharp from 'sharp';
 import Web3 from 'web3';
 
 import wtanimalABI from './../abi/wtanimal.abi.js';
@@ -22,17 +22,11 @@ export async function tokenURI(tokenID, req, res) {
                 }
 
                 var tokenImagePath = generateTokenImage(tokenID, result);
-                if (!tokenImagePath) {
-                    res.status(200).json({ error: 'An error occured ...' });
-                    return;
-                }
-
-                var base64 = new Buffer(fs.readFileSync(tokenImagePath)).toString('base64');
+                
                 var json = {
                     name: `${result.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
                     description: 'Wolf Town NFT collection.',
                     image: `${process.env.URL}images/wtanimals/${tokenID}.png`,
-                    svgImage: `<svg id="woolf" width="100%" height="100%" version="1.1" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image x="4" y="4" width="32" height="32" image-rendering="pixelated" preserveAspectRatio="xMidYMid" xlink:href="data:image/png;base64,${base64}"></image></svg>`,
                     attributes: [
                         { trait_type: 'fur', value: result['fur'] },
                         { trait_type: 'head', value: result['head'] },
@@ -72,31 +66,40 @@ export async function tokenURI(tokenID, req, res) {
 export function generateTokenImage(tokenID, traits) {
     var bodyPartsPath = `${process.cwd()}/public/images/bodyParts/`;
     var tokenImagePath = `${process.cwd()}/public/images/wtanimals/${tokenID}.png`;
+    var tokenSmallImagePath = `${process.cwd()}/public/images/wtanimalsSmall/${tokenID}.png`;
 
     if (!fs.existsSync(tokenImagePath)) {
-        try {
-            if (traits.isSheep) {
-                images(`${bodyPartsPath}0/${bodyPartsData[0][parseInt(traits.fur)].name}.png`)
-                    .draw(images(`${bodyPartsPath}1/${bodyPartsData[1][parseInt(traits.head)].name}.png`), 0, 0)
+        if (traits.isSheep) {
+            sharp(`${bodyPartsPath}0/${bodyPartsData[0][parseInt(traits.fur)].name}.png`)
+                .composite([
+                    { input: `${bodyPartsPath}1/${bodyPartsData[1][parseInt(traits.head)].name}.png` },
                     // GOLD EARS ARE BUGGED (3, 4, 5)
-                    .draw(images(`${bodyPartsPath}2/${bodyPartsData[2][[3, 4, 5].indexOf(parseInt(traits.ears)) == -1 ? parseInt(traits.ears) : 0].name}.png`), 0, 0)
-                    .draw(images(`${bodyPartsPath}3/${bodyPartsData[3][parseInt(traits.eyes)].name}.png`), 0, 0)
-                    .draw(images(`${bodyPartsPath}4/${bodyPartsData[4][parseInt(traits.nose)].name}.png`), 0, 0)
-                    .draw(images(`${bodyPartsPath}5/${bodyPartsData[5][parseInt(traits.mouth)].name}.png`), 0, 0)
-                    .draw(images(`${bodyPartsPath}7/${bodyPartsData[7][parseInt(traits.feet)].name}.png`), 0, 0)
-                    .save(tokenImagePath);
-            } else {
-                images(`${bodyPartsPath}9/${bodyPartsData[9][parseInt(traits.fur)].name}.png`)
-                    .draw(images(`${bodyPartsPath}12/${bodyPartsData[12][parseInt(traits.eyes)].name}.png`), 0, 0)
-                    .draw(images(`${bodyPartsPath}14/${bodyPartsData[14][parseInt(traits.nose)].name}.png`), 0, 0)
-                    .draw(images(`${bodyPartsPath}15/${bodyPartsData[15][parseInt(traits.neck)].name}.png`), 0, 0)
-                    .draw(images(`${bodyPartsPath}10/${bodyPartsData[10][parseInt(traits.alpha)].name}.png`), 0, 0)
-                    .save(tokenImagePath);
-            }
-        } catch (err) {
-            console.log(`animals.js:generateTokenImage ${err}`);
-            console.log(`traits: ${traits}`);
-            tokenImagePath = null;
+                    { input: `${bodyPartsPath}2/${bodyPartsData[2][[3, 4, 5].indexOf(parseInt(traits.ears)) == -1 ? parseInt(traits.ears) : 0].name}.png` },
+                    { input: `${bodyPartsPath}3/${bodyPartsData[3][parseInt(traits.eyes)].name}.png` },
+                    { input: `${bodyPartsPath}4/${bodyPartsData[4][parseInt(traits.nose)].name}.png` },
+                    { input: `${bodyPartsPath}5/${bodyPartsData[5][parseInt(traits.mouth)].name}.png` },
+                    { input: `${bodyPartsPath}7/${bodyPartsData[7][parseInt(traits.feet)].name}.png` }
+                ])
+                .toFile(tokenSmallImagePath)
+                .then(() => {
+                    sharp(tokenSmallImagePath)
+                        .resize({ width: 320, height: 320, kernel: 'nearest' })
+                        .toFile(tokenImagePath);
+                });
+        } else {
+            sharp(`${bodyPartsPath}9/${bodyPartsData[9][parseInt(traits.fur)].name}.png`)
+                .composite([
+                    { input: `${bodyPartsPath}12/${bodyPartsData[12][parseInt(traits.eyes)].name}.png` },
+                    { input: `${bodyPartsPath}14/${bodyPartsData[14][parseInt(traits.nose)].name}.png` },
+                    { input: `${bodyPartsPath}15/${bodyPartsData[15][parseInt(traits.neck)].name}.png` },
+                    { input: `${bodyPartsPath}10/${bodyPartsData[10][parseInt(traits.alpha)].name}.png` }
+                ])
+                .toFile(tokenSmallImagePath)
+                .then(() => {
+                    sharp(tokenSmallImagePath)
+                        .resize({ width: 320, height: 320, kernel: 'nearest' })
+                        .toFile(tokenImagePath);
+                });
         }
     }
 

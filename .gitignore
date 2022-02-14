@@ -2,6 +2,7 @@
 .env.dev
 
 /public/images/wtanimals/*
+/public/images/wtanimalsSmall/*
 /public/metadata/*
 
 package-lock.json
