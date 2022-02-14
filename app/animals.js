@@ -31,7 +31,8 @@ export async function tokenURI(tokenID, req, res) {
                 var json = {
                     name: `${result.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
                     description: 'Wolf Town NFT collection.',
-                    image: `<svg id="woolf" width="100%" height="100%" version="1.1" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image x="4" y="4" width="32" height="32" image-rendering="pixelated" preserveAspectRatio="xMidYMid" xlink:href="data:image/png;base64,${base64}"></image></svg>`,
+                    image: `${process.env.URL}images/wtanimals/${tokenID}.png`,
+                    svgImage: `<svg id="woolf" width="100%" height="100%" version="1.1" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image x="4" y="4" width="32" height="32" image-rendering="pixelated" preserveAspectRatio="xMidYMid" xlink:href="data:image/png;base64,${base64}"></image></svg>`,
                     attributes: [
                         { trait_type: 'fur', value: result['fur'] },
                         { trait_type: 'head', value: result['head'] },
