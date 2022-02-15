@@ -23,7 +23,7 @@ export function tokenURI(tokenID, req, res) {
 
                 var tokenImagePath = await generateTokenImage(tokenID, result);
                 var base64 = new Buffer(fs.readFileSync(`${process.cwd()}/public/images/wtanimalsSmall/${tokenID}.png`)).toString('base64');
-console.log(result)
+
                 var json = {
                     name: `${result.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
                     description: 'Wolf Town NFT collection.',
