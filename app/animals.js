@@ -30,6 +30,7 @@ export function tokenURI(tokenID, req, res) {
                     image: `${process.env.URL}images/animals/${tokenID}.png`,
                     imageSmall: `data:image/svg;base64,${base64}`,
                     attributes: [
+                        { trait_type: 'type', value: result.isSheep ? 'Sheep' : 'Wolf' },
                         { trait_type: 'fur', value: bodyPartsData[result.isSheep ? 0 : 9][parseInt(result['fur'])].name },
                         { trait_type: 'head', value: bodyPartsData[1][parseInt(result['head'])].name },
                         { trait_type: 'ears', value: bodyPartsData[2][parseInt(result['ears'])].name },

@@ -29,10 +29,11 @@ export function unstakeOrder(address, keepWolves, req, res) {
                     if (keepWolves) {
                         unstakeOrder.push(result);
                     } else {
-                        var traits = JSON.parse(fs.readFileSync(`./public/metadata/${result.tokenId}.json`));
-                        if (traits.isSheep) {
-                            unstakeOrder.push(result);
-                        }
+                        await (wtanimalContract.methods.tokenTraits(result.tokenId).call((err, traits) => {
+                            if (traits.isSheep) {
+                                unstakeOrder.push(result);
+                            }
+                        }));
                     }
                 }
             }));
