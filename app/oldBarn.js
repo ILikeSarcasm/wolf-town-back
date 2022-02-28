@@ -31,7 +31,7 @@ export function unstakeOrder(address, keepWolves, req, res) {
                 }
 
                 var length = unstakeOrder.length;
-                if (address == result.owner && (!length || unstakeOrder[length-1].timestamp >= result.timestamp)) {
+                if (address.toLowerCase() == result.owner.toLowerCase() && (!length || unstakeOrder[length-1].timestamp >= result.timestamp)) {
                     if (keepWolves) {
                         unstakeOrder.push(result);
                     } else {
@@ -77,7 +77,7 @@ export function lockedTokens(address, req, res) {
                             return;
                         }
 
-                        if (result.owner == address) {
+                        if (result.owner.toLowerCase() == address.toLowerCase()) {
                             lockedTokens.push(parseInt(result.tokenId));
 
                             if (lockedTokens.length == totalStakesOf) {
