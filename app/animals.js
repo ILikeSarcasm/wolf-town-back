@@ -13,14 +13,23 @@ const wtanimalContract = new web3.eth.Contract(wtanimalABI, wtanimalAddress);
 export function tokenURI(tokenID, req, res) {
     getTokenURI(tokenID)
         .then(json => res.status(200).json(json))
-        .catch(err => res.status(200).json({ error: err }));
+        .catch(error => res.status(200).json({ err: error.error }));
 }
 
 export function tokenURIs(tokenIDs, req, res) {
     var promises = tokenIDs.map(tokenID => getTokenURI(tokenID));
 
     Promise.allSettled(promises).then(results => {
-        var metadatas = results.map(result => result.status == 'fulfilled' ? result.value : result.reason);
+        var metadatas = results.map(result =>
+            result.status == 'fulfilled' ?
+            [ result.value.id, result.value ] :
+            [ result.reason.tokenID, result.reason.error ]
+        ).reduce((el, item) => {
+            const [k, v] = item;
+            el[k] = v;
+            return el;
+        }, {});
+
         res.status(200).json(JSON.stringify(metadatas));
     });
 }
@@ -30,10 +39,10 @@ function getTokenURI(tokenID) {
         var metadataPath = `./public/metadata/${tokenID}.json`;
         if (tokenID <= 50000) {
             if (!fs.existsSync(metadataPath)) {
-                wtanimalContract.methods.tokenTraits(tokenID).call(async (err, result) => {
-                    if (err) {
-                        console.log(`animals.js:tokenURI ${err}`);
-                        reject(err);
+                wtanimalContract.methods.tokenTraits(tokenID).call(async (error, result) => {
+                    if (error) {
+                        console.log(`animals.js:tokenURI ${error}`);
+                        reject({ tokenID, error });
                         return;
                     }
 
@@ -41,6 +50,7 @@ function getTokenURI(tokenID) {
                     var base64 = new Buffer(fs.readFileSync(`${process.cwd()}/public/images/wtanimalsSmall/${tokenID}.png`)).toString('base64');
 
                     var json = {
+                        id: tokenID,
                         name: `${result.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
                         description: 'Wolf Town NFT collection.',
                         image: `${process.env.URL}images/animals/${tokenID}.png`,
@@ -59,26 +69,26 @@ function getTokenURI(tokenID) {
                         ]
                     };
 
-                    fs.writeFile(metadataPath, JSON.stringify(json), (err) => {
-                        if (err) {
-                            console.log(`animals.js:tokenURI ${err}`);
+                    fs.writeFile(metadataPath, JSON.stringify(json), (error) => {
+                        if (error) {
+                            console.log(`animals.js:tokenURI ${error}`);
                         }
                     });
 
                     resolve(json);
                 });
             } else {
-                fs.readFile(metadataPath, (err, json) => {
-                    if (err) {
-                        console.log(`animals.js:tokenURI ${err}`);
-                        reject(err);
+                fs.readFile(metadataPath, (error, json) => {
+                    if (error) {
+                        console.log(`animals.js:tokenURI ${error}`);
+                        reject({ tokenID, error });
                     } else {
                         resolve(JSON.parse(json));
                     }
                 });
             }
         } else {
-            reject('Token does not exist.');
+            reject({ tokenID, error: `Token #${tokenID} does not exist.` });
         }
     });
 }
