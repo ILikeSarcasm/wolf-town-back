@@ -3,94 +3,124 @@ import sharp from 'sharp';
 import Web3 from 'web3';
 
 import wtanimalABI from './../abi/wtanimal.abi.js';
+import wtAPIABI from './../abi/wtAPI.abi.js';
 import bodyPartsData from './../public/images/bodyParts/bodyPartsData.js';
 
 const web3 = new Web3(process.env.RPC_PROVIDER);
 
 const wtanimalAddress = process.env.WTANIMAL_CONTRACT;
 const wtanimalContract = new web3.eth.Contract(wtanimalABI, wtanimalAddress);
+const wtAPIAddress = process.env.WTAPI_CONTRACT;
+const wtAPIContract = new web3.eth.Contract(wtAPIABI, wtAPIAddress);
 
 export function tokenURI(tokenID, req, res) {
-    getTokenURI(tokenID)
-        .then(json => res.status(200).json(json))
-        .catch(error => res.status(200).json({ err: error.error }));
+    var metadataPath = `./public/metadata/${tokenID}.json`;
+    if (!fs.existsSync(metadataPath)) {
+        wtanimalContract.methods.totalSupply().call((error, totalSupply) => {
+            if (error) {
+                console.log(`animals.js:tokenURI ${error}`);
+                res.status(200).json({ err: error.data });
+                return;
+            }
+
+            if (totalSupply < tokenID) {
+                console.log(`animals.js:tokenURI Token ${tokenID} does not exist.`);
+                res.status(200).json({ err: `Token ${tokenID} does not exist.` });
+                return;
+            }
+
+            wtanimalContract.methods.tokenTraits(tokenID).call(async (error, traits) => {
+                if (error) {
+                    console.log(`animals.js:tokenURI ${error}`);
+                    res.status(200).json({ err: error.data });
+                    return;
+                }
+
+                res.status(200).json(await generateTokenMetadata(tokenID, traits));
+            });
+        });
+    } else {
+        fs.readFile(metadataPath, (error, json) => {
+            if (error) {
+                console.log(`animals.js:tokenURI ${error}`);
+                res.status(200).json({ err: error.data });
+            } else {
+                res.status(200).json(JSON.parse(json));
+            }
+        });
+    }
 }
 
 export function tokenURIs(tokenIDs, req, res) {
-    var promises = tokenIDs.map(tokenID => getTokenURI(tokenID));
+    wtanimalContract.methods.totalSupply().call((error, totalSupply) => {
+        wtAPIContract.methods.WTAnimalURIs(tokenIDs, wtanimalAddress).call(async (error, traitsArray) => {
+            if (error) {
+                console.log(`animals.js:tokenURIs ${error}`);
+                reject({ err: error });
+                return;
+            }
 
-    Promise.allSettled(promises).then(results => {
-        var metadatas = results.map(result =>
-            result.status == 'fulfilled' ?
-            [ result.value.id, result.value ] :
-            [ result.reason.tokenID, result.reason.error ]
-        ).reduce((el, item) => {
-            const [k, v] = item;
-            el[k] = v;
-            return el;
-        }, {});
+            var metadatas = {};
 
-        res.status(200).json(metadatas);
+            for (var i=0; i<traitsArray.length; i++) {
+                var metadata;
+                var metadataPath = `./public/metadata/${tokenIDs[i]}.json`;
+
+                if (totalSupply >= tokenIDs[i]) {
+                    if (!fs.existsSync(metadataPath)) {
+                        metadata = await generateTokenMetadata(tokenIDs[i], traitsArray[i]);
+                    } else {
+                        try {
+                            metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+                        } catch (error) {
+                            console.error(`animals.js:tokenURIs ${error}`);
+                            metadata = { data: error };
+                        }
+                    }
+                } else {
+                    console.error(`animals.js:tokenURIs Token ${tokenIDs[i]} does not exist.`);
+                    metadata = { data: `Token ${tokenIDs[i]} does not exist.` }
+                }
+
+                metadatas[tokenIDs[i]] = metadata;
+            }
+
+            res.status(200).json(metadatas);
+        });
     });
 }
 
-function getTokenURI(tokenID) {
-    return new Promise((resolve, reject) => {
-        var metadataPath = `./public/metadata/${tokenID}.json`;
-        if (tokenID <= 50000) {
-            if (!fs.existsSync(metadataPath)) {
-                wtanimalContract.methods.tokenTraits(tokenID).call(async (error, result) => {
-                    if (error) {
-                        console.log(`animals.js:tokenURI ${error}`);
-                        reject({ tokenID, error: { err: error.data } });
-                        return;
-                    }
+async function generateTokenMetadata(tokenID, traits) {
+    await generateTokenImage(tokenID, traits);
 
-                    var tokenImagePath = await generateTokenImage(tokenID, result);
-                    var base64 = new Buffer(fs.readFileSync(`${process.cwd()}/public/images/wtanimalsSmall/${tokenID}.png`)).toString('base64');
+    var base64SmallImage = new Buffer(fs.readFileSync(`${process.cwd()}/public/images/wtanimalsSmall/${tokenID}.png`)).toString('base64');
+    var metadata = {
+        id: tokenID,
+        name: `${traits.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
+        description: 'Wolf Town NFT collection.',
+        image: `${process.env.URL}images/animals/${tokenID}.png`,
+        imageSmall: `data:image/svg;base64,${base64SmallImage}`,
+        attributes: [
+            { trait_type: 'type', value: traits.isSheep ? 'Sheep' : 'Wolf' },
+            { trait_type: 'fur', value: bodyPartsData[traits.isSheep ? 0 : 9][parseInt(traits['fur'])].name },
+            { trait_type: 'head', value: bodyPartsData[1][parseInt(traits['head'])].name },
+            { trait_type: 'ears', value: bodyPartsData[2][parseInt(traits['ears'])].name },
+            { trait_type: 'eyes', value: bodyPartsData[traits.isSheep ? 3 : 12][parseInt(traits['eyes'])].name },
+            { trait_type: 'nose', value: bodyPartsData[traits.isSheep ? 4 : 14][parseInt(traits['nose'])].name },
+            { trait_type: 'mouth', value: bodyPartsData[5][parseInt(traits['mouth'])].name },
+            { trait_type: 'neck', value: traits.isSheep ? "None" : bodyPartsData[15][parseInt(traits['neck'])].name },
+            { trait_type: 'feet', value: bodyPartsData[7][parseInt(traits['feet'])].name },
+            { trait_type: 'alpha', value: traits.isSheep ? "None" : bodyPartsData[10][parseInt(traits['alpha'])].name }
+        ]
+    };
 
-                    var json = {
-                        id: tokenID,
-                        name: `${result.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
-                        description: 'Wolf Town NFT collection.',
-                        image: `${process.env.URL}images/animals/${tokenID}.png`,
-                        imageSmall: `data:image/svg;base64,${base64}`,
-                        attributes: [
-                            { trait_type: 'type', value: result.isSheep ? 'Sheep' : 'Wolf' },
-                            { trait_type: 'fur', value: bodyPartsData[result.isSheep ? 0 : 9][parseInt(result['fur'])].name },
-                            { trait_type: 'head', value: bodyPartsData[1][parseInt(result['head'])].name },
-                            { trait_type: 'ears', value: bodyPartsData[2][parseInt(result['ears'])].name },
-                            { trait_type: 'eyes', value: bodyPartsData[result.isSheep ? 3 : 12][parseInt(result['eyes'])].name },
-                            { trait_type: 'nose', value: bodyPartsData[result.isSheep ? 4 : 14][parseInt(result['nose'])].name },
-                            { trait_type: 'mouth', value: bodyPartsData[5][parseInt(result['mouth'])].name },
-                            { trait_type: 'neck', value: result.isSheep ? "None" : bodyPartsData[15][parseInt(result['neck'])].name },
-                            { trait_type: 'feet', value: bodyPartsData[7][parseInt(result['feet'])].name },
-                            { trait_type: 'alpha', value: result.isSheep ? "None" : bodyPartsData[10][parseInt(result['alpha'])].name }
-                        ]
-                    };
-
-                    fs.writeFile(metadataPath, JSON.stringify(json), (error) => {
-                        if (error) {
-                            console.log(`animals.js:tokenURI ${error}`);
-                        }
-                    });
-
-                    resolve(json);
-                });
-            } else {
-                fs.readFile(metadataPath, (error, json) => {
-                    if (error) {
-                        console.log(`animals.js:tokenURI ${error}`);
-                        reject({ tokenID, error: { err: error.data } });
-                    } else {
-                        resolve(JSON.parse(json));
-                    }
-                });
-            }
-        } else {
-            reject({ tokenID, error: { err: `Token #${tokenID} does not exist.` } });
+    fs.writeFile(`./public/metadata/${tokenID}.json`, JSON.stringify(metadata), (error) => {
+        if (error) {
+            console.log(`animals.js:generateTokenMetadata ${error}`);
         }
     });
+
+    return metadata;
 }
 
 export function generateTokenImage(tokenID, traits) {
@@ -137,6 +167,8 @@ export function generateTokenImage(tokenID, traits) {
                             .then(() => resolve(tokenImagePath));
                     });
             }
+        } else {
+            resolve(tokenImagePath);
         }
     });
 }
