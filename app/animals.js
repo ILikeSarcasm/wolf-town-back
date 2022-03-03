@@ -30,7 +30,7 @@ export function tokenURIs(tokenIDs, req, res) {
             return el;
         }, {});
 
-        res.status(200).json(JSON.stringify(metadatas));
+        res.status(200).json(metadatas);
     });
 }
 
@@ -42,7 +42,7 @@ function getTokenURI(tokenID) {
                 wtanimalContract.methods.tokenTraits(tokenID).call(async (error, result) => {
                     if (error) {
                         console.log(`animals.js:tokenURI ${error}`);
-                        reject({ tokenID, error });
+                        reject({ tokenID, error: { err: error.data } });
                         return;
                     }
 
@@ -81,14 +81,14 @@ function getTokenURI(tokenID) {
                 fs.readFile(metadataPath, (error, json) => {
                     if (error) {
                         console.log(`animals.js:tokenURI ${error}`);
-                        reject({ tokenID, error });
+                        reject({ tokenID, error: { err: error.data } });
                     } else {
                         resolve(JSON.parse(json));
                     }
                 });
             }
         } else {
-            reject({ tokenID, error: `Token #${tokenID} does not exist.` });
+            reject({ tokenID, error: { err: `Token #${tokenID} does not exist.` } });
         }
     });
 }
