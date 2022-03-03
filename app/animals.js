@@ -23,7 +23,7 @@ export function tokenURI(tokenID, req, res) {
                 return;
             }
 
-            if (totalSupply < tokenID) {
+            if (parseInt(totalSupply) < parseInt(tokenID)) {
                 console.log(`animals.js:tokenURI Token ${tokenID} does not exist.`);
                 res.status(200).json({ err: `Token ${tokenID} does not exist.` });
                 return;
@@ -66,7 +66,7 @@ export function tokenURIs(tokenIDs, req, res) {
                 var metadata;
                 var metadataPath = `./public/metadata/${tokenIDs[i]}.json`;
 
-                if (totalSupply >= tokenIDs[i]) {
+                if (parseInt(totalSupply) >= parseInt(tokenIDs[i])) {
                     if (!fs.existsSync(metadataPath)) {
                         metadata = await generateTokenMetadata(tokenIDs[i], traitsArray[i]);
                     } else {
