@@ -14,7 +14,7 @@ const wtAPIAddress = process.env.WTAPI_CONTRACT;
 const wtAPIContract = new web3.eth.Contract(wtAPIABI, wtAPIAddress);
 
 export function tokenURI(tokenID, req, res) {
-    var metadataPath = `./public/metadata/${tokenID}.json`;
+    var metadataPath = `${process.cwd()}/public/metadata/${tokenID}.json`;
     if (!fs.existsSync(metadataPath)) {
         wtanimalContract.methods.totalSupply().call((error, totalSupply) => {
             if (error) {
@@ -64,7 +64,7 @@ export function tokenURIs(tokenIDs, req, res) {
 
             for (var i=0; i<traitsArray.length; i++) {
                 var metadata;
-                var metadataPath = `./public/metadata/${tokenIDs[i]}.json`;
+                var metadataPath = `${process.cwd()}/public/metadata/${tokenIDs[i]}.json`;
 
                 if (parseInt(totalSupply) >= parseInt(tokenIDs[i])) {
                     if (!fs.existsSync(metadataPath)) {
@@ -114,7 +114,7 @@ async function generateTokenMetadata(tokenID, traits) {
         ]
     };
 
-    fs.writeFile(`./public/metadata/${tokenID}.json`, JSON.stringify(metadata), (error) => {
+    fs.writeFile(`${process.cwd()}/public/metadata/${tokenID}.json`, JSON.stringify(metadata), (error) => {
         if (error) {
             console.log(`animals.js:generateTokenMetadata ${error}`);
         }
@@ -123,7 +123,7 @@ async function generateTokenMetadata(tokenID, traits) {
     return metadata;
 }
 
-export function generateTokenImage(tokenID, traits) {
+function generateTokenImage(tokenID, traits) {
     return new Promise((resolve, reject) => {
         var wtanimalsLogo = `${process.cwd()}/public/images/wtanimalsLogo.png`;
         var bodyPartsPath = `${process.cwd()}/public/images/bodyParts/`;
@@ -173,6 +173,6 @@ export function generateTokenImage(tokenID, traits) {
     });
 }
 
-const animals = { tokenURI, tokenURIs, generateTokenImage };
+const animals = { tokenURI, tokenURIs };
 
 export default animals;
