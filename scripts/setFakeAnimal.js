@@ -15,7 +15,20 @@ for (var i=0; i<process.argv.length - 2; i++) {
 
     try {
         var metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-        metadata.attributes.push({ trait_type: 'Integrity', value: 'Fake' });
+
+        var traitExists = false;
+        for (var j=0; j<metadata.attributes.length; j++) {
+            if (metadata.attributes[j].trait_type == 'Integrity') {
+                metadata.attributes[j].value = 'Fake';
+                traitExists = true;
+                break;
+            }
+        }
+
+        if (!traitExists) {
+            metadata.attributes.push({ trait_type: 'Integrity', value: 'Fake' });
+        }
+        
         fs.writeFileSync(metadataPath, JSON.stringify(metadata));
         await (sharp(tokenImagePath).composite([{ input: wtanimalsFake }]).toFile(`${tokenImagePath}.fake.png`));
         fs.unlinkSync(tokenImagePath);
