@@ -10,15 +10,33 @@ const buildingGameContract = new web3.eth.Contract(buildingGameABI, buildingGame
 
 const connection = mysql.createConnection(config);
 
-const MINIMUM_PARTICIPATION = 10;
-const MINIMUM_PARTICIPANT = 2;
+const MIN_PARTICIPATION = 10;
 
-export function participateMany(game, participations, req, res) {
-    var sql = "INESRT INTO buildingGame (`game`, `user`, `animalID`, `action`, `hash`, `nonce`) " +
-              "VALUES " + participations.map(e => '(:?, :?, :?, :?, :?, :?)').join(', ') + ";";
-    var params = participations.reduce((all, el) => all.concat(Object.values(el)), []);
-    db.query(sql, params).then(() => {
+export function participateMany(game, user, participations, res) {
+    var sql = "SELECT MIN(`max`) AS `max_participations`" +
+              "FROM (" +
+		              "SELECT CASE WHEN " + MIN_PARTICIPATION + " - COUNT(*) <= " + MIN_PARTICIPATION / 2 + " THEN " + MIN_PARTICIPATION + " - COUNT(*) ELSE " + MIN_PARTICIPATION / 2 + " END AS `max` FROM buildingGame WHERE `game` = :? AND `state` = 'WAITING'" +
+	              "UNION" +
+		              "SELECT " + MIN_PARTICIPATION / 2 + " - COUNT(*) AS `max` FROM buildingGame WHERE `game` = :? AND `state` = 'WAITING' AND `user` = :?" +
+              ") t;";
+    var params = [ game, game, user ];
+
+    db.query(sql, params).then(result => {
+        var toWaiting = result.max_participations;
+        var toStored = participations.length - toWaiting;
+
+        if (toWaiting > 0) {
+            var sql = "INSERT INTO buildingGame (`state`, `game`, `user`, `animalID`, `action`, `hash`, `nonce`) " +
+                      "VALUES " + Array(toWaiting).fill(`('WAITING', :?, :?, :?, :?, :?, :?)`).join(', ') + ";";
+        }
+
+        if (toStored > 0) {
+            var sql = "INSERT INTO buildingGame (`state`, `game`, `user`, `animalID`, `action`, `hash`, `nonce`) " +
+                      "VALUES " + Array(toStored).fill(`('STORED', :?, :?, :?, :?, :?, :?)`).join(', ') + ";";
+        }
+
         res.status(200).json({ result: true });
+
         checkMatches(game);
     }).catch(error => {
         console.err(`buildingGame.js:participateMany ${error}.`);
@@ -27,72 +45,96 @@ export function participateMany(game, participations, req, res) {
 }
 
 function checkMatches(game) {
-    var sql = "SELECT SUM(`user_participations`) AS `participation_number`, " +
-                      "COUNT(*) AS `user_number`, " +
-                      "MAX(`user_participations`) AS `max_user_participation` " +
-              "FROM (SELECT `user`, COUNT(*) AS `user_participations` FROM buildingGame WHERE game = :? GROUP BY `user`) t;";
-    db.query(sql, [ game ]).then(result => {
-        console.log(
-            `${result.participation_number}/${MINIMUM_PARTICIPATION} participations  |  ` +
-            `${result.user_number}/${MINIMUM_PARTICIPANT} participants   |   ` +
-            `${result.max_user_participation}/${result.participation_number / 2} maximum user participation`
-        );
-        if (
-            result.participation_number >= MINIMUM_PARTICIPATION &&
-            result.user_number >= MINIMUM_PARTICIPANT &&
-            result.max_user_participation <= result.participation_number / 2
-        ) { initiateMatchMaking(game); }
+    var sql = "SELECT COUNT(*) AS `waiting_participations`" +
+              "FROM buildingGame" +
+              "WHERE `game` = :? AND `state` = 'WAITING';";
+    var params = [ game ];
+
+    db.query(sql, params).then(result => {
+        if (result.waiting_participations >= MIN_PARTICIPATION) {
+            initiateMatchMaking(game);
+        }
     }).catch(error => console.err(`buildingGame.js:checkMatches ${error}.`));
 }
 
 function initiateMatchMaking(game) {
-    var sql = "SELECT `animalID`, `action`, `hash` FROM buildingGame;";
-    db.query(sql).then(result => {
+    var sql = "UPDATE buildingGame" +
+              "SET `state` = 'PROCESSING'" +
+              "WHERE `game` = :? AND `state` = 'WAITING';";
+    var params = [ game ];
+
+    db.query(sql, params)
+        .then(() => fetchParticipationData(game))
+        .catch(error => console.err(`buildingGame.js:initiateMatchMaking ${error}.`));
+}
+
+function fetchParticipationData(game) {
+    var sql = "SELECT `user`, `animalID`, `action`, `hash`" +
+              "FROM buildingGame" +
+              "WHERE `game` = :? AND `state` = 'WAITING'" +
+              "LIMIT " + MIN_PARTICIPATION + ";";
+    var params = [ game ];
+
+    db.query(sql, params).then(result => {
+        // var users = [];
         var animalIds = [];
         var actions = [];
         var hash = [];
 
         result.forEach(el => {
+            // users.push(el.user);
             animalIds.push(el.animalID);
             actions.push(el.action);
             hash.push(el.hash);
         });
 
-        checkData(game, animalIds, actions, hashes);
-    }).catch(error => console.err(`buildingGame.js:makeMatches ${error}.`));
+        checkData(game, /* users, */ animalIds, actions, hashes);
+    }).catch(error => console.err(`buildingGame.js:initiateMatchMaking ${error}.`));
 }
 
-function checkData(animalIds, actions, hashes) {
-    buildingGameContract.methods.participations().call((error, result) => {
+function checkData(game, /* users, */ animalIds, actions, hashes) {
+    buildingGameContract.methods.participations(game, animalIds).call((error, result) => {
         if (error) {
             console.err(`buildingGame.js:checkData ${error}`);
             return;
         }
 
         var invalidData = 0;
-        result[1].forEach(isValid => {
-            if (!isValid) {
-                var sql = "DELETE FROM buildingGame WHERE `animalIds` = :?;";
-                db.query(sql, el).catch(error => console.err(`buildingGame.js:checkData ${error}.`));
+        for (var i=0; i<animalIds.length; i++) {
+            var hashedAction = web3.sha3(
+                web3.utils.toHex(actions[i]) +
+                web3.utils.toHex(hashes[i]) +
+                web3.utils.toHex(result[i].nonce
+            ), { encoding: 'hex' });
+
+            if (hashedAction != result[i].hashedAction) {
+                var sql = "DELETE FROM buildingGame" +
+                          "WHERE `game` = :? AND `animalIds` = :?;";
+                var params = [ game, animalIds[i] ];
+
+                db.query(sql, params).catch(error => console.err(`buildingGame.js:checkData ${error}.`));
                 invalidData++;
             }
-        });
+        }
 
         if (!invalidData) {
-            makeMatches(game);
+            makeMatches(game, /* users, */ animalIds, actions, hashes);
         }
     });
 }
 
-function makeMatches(game) {
-    buildingGameContract.methods.makeMatches(animalIds, actions, hashes).call((error, result) => {
+function makeMatches(game, /* users, */ animalIds, actions, hashes) {
+    buildingGameContract.methods.makeMatches(/* users, */ animalIds, actions, hashes).call((error, result) => {
         if (error) {
             console.log(`buildingGame.js:makeMatches ${error}`)
             return;
         }
 
-        var sql = "DELETE FROM buildingGame WHERE `animalIds` IN (" + animalIds.map(e => ':?').join(', ') + ");";
-        db.query(sql, animalIds).catch(error => console.err(`buildingGame.js:makeMatches ${error}.`));
+        var sql = "DELETE FROM buildingGame" +
+                  "WHERE `game` = :? AND `state` = 'PROCESSING' AND `animalIds` IN (" + animalIds.map(e => ':?').join(', ') + ");";
+        var params = [ game, ...animalIds ];
+
+        db.query(sql, params).catch(error => console.err(`buildingGame.js:makeMatches Tokens: ${animalIds} ${error}.`));
     });
 }
 
