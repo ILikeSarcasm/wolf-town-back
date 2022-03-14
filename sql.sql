@@ -13,24 +13,22 @@
 
 
 -- Listage de la structure de la base pour wolf-town
-DROP DATABASE IF EXISTS `wolf-town`;
 CREATE DATABASE IF NOT EXISTS `wolf-town` /*!40100 DEFAULT CHARACTER SET latin1 */;
 USE `wolf-town`;
 
 -- Listage de la structure de la table wolf-town. buildinggame
-DROP TABLE IF EXISTS `buildinggame`;
 CREATE TABLE IF NOT EXISTS `buildinggame` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `game` varchar(50) NOT NULL,
+  `state` enum('PROCESSING','WAITING') NOT NULL,
   `user` varchar(50) NOT NULL,
   `animalID` int(11) NOT NULL,
   `action` enum('BUILD','STEAL') NOT NULL,
   `hash` varchar(50) NOT NULL,
-  `nonce` int(11) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `user_nonce` (`user`,`nonce`),
   UNIQUE KEY `animalID` (`animalID`,`game`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=latin1;
 
 -- Les données exportées n'étaient pas sélectionnées.
 
