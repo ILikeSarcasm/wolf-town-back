@@ -13,8 +13,18 @@
 
 
 -- Listage de la structure de la base pour wolf-town
+DROP DATABASE IF EXISTS `wolf-town`;
 CREATE DATABASE IF NOT EXISTS `wolf-town` /*!40100 DEFAULT CHARACTER SET latin1 */;
 USE `wolf-town`;
+
+-- Listage de la structure de la table wolf-town. building
+CREATE TABLE IF NOT EXISTS `building` (
+  `id` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- Les données exportées n'étaient pas sélectionnées.
 
 -- Listage de la structure de la table wolf-town. buildinggame
 CREATE TABLE IF NOT EXISTS `buildinggame` (
@@ -29,6 +39,18 @@ CREATE TABLE IF NOT EXISTS `buildinggame` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `animalID` (`animalID`,`game`)
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=latin1;
+
+-- Les données exportées n'étaient pas sélectionnées.
+
+-- Listage de la structure de la table wolf-town. deed
+CREATE TABLE IF NOT EXISTS `deed` (
+  `id` int(11) NOT NULL,
+  `buildingId` int(11) NOT NULL,
+  `points` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_DEED_BUILDING` (`buildingId`),
+  CONSTRAINT `FK_DEED_BUILDING` FOREIGN KEY (`buildingId`) REFERENCES `deed` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Les données exportées n'étaient pas sélectionnées.
 
