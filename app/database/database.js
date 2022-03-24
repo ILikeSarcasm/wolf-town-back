@@ -1,5 +1,7 @@
 import mysql from 'mysql';
-import config from './config.js';
+import config from './db-config.js';
+
+const connection = mysql.createConnection(config);
 
 export function query(sql, params = []) {
     return new Promise((resolve, reject) => {

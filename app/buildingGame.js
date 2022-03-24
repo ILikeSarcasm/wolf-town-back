@@ -1,127 +1,202 @@
 import Web3 from 'web3';
+import Tx from 'ethereumjs-tx';
+import Common from 'ethereumjs-common';
+import { ethers } from 'ethers';
 import db from './database/database.js';
 
-import buildingGameABI from './../abi/buildingGame.abi.js';
+import buildingGameABI from './../abi/buildinggamemanager.abi.js';
 
 const web3 = new Web3(process.env.RPC_PROVIDER);
 
-const buildingGameAddress = process.env.BUILDING_GAME_CONTRACT;
+const chain = Common.default.forCustomChain('mainnet', {
+    name: process.env.CHAIN_NAME,
+    networkId: parseInt(process.env.CHAIN_ID),
+    chainId: parseInt(process.env.CHAIN_ID)
+}, 'petersburg');
+
+const account = process.env.WALLET_PUBLIC_KEY;
+const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY, 'hex');
+
+const buildingGameAddress = process.env.BUILDING_GAME_MANAGER_CONTRACT;
 const buildingGameContract = new web3.eth.Contract(buildingGameABI, buildingGameAddress);
 
-const connection = mysql.createConnection(config);
+const keccak256 = ethers.utils.solidityKeccak256;
 
 const MIN_PARTICIPATION = 10;
 
-export function participateMany(game, user, participations, res) {
-    var sql = "INSERT INTO buildingGame (`state`, `game`, `user`, `animalID`, `action`, `hash`) " +
-              "VALUES " + Array(participations.length).fill(`('WAITING', :?, :?, :?, :?, :?)`).join(', ') + ";";
-    var params = participations.reduce((all, el) => all.concat([ game, el.user, el.animalID, el.action, el.hash ]), []);
+// Participations => Participation[]
+// Participation => { animalId: ..., action: ..., hashedAction: ... }
+// Needs user to sign
+export async function participateMany(gameId, user, participations, res) {
+    const [ validParticipations, invalidParticipations ] = await checkData(gameId, participations);
+
+    if (validParticipations.length == 0) {
+        console.log(`buildingGame.js:participateMany Invalid data`);
+        res.status(200).json({ err: 'Invalid data' });
+        return;
+    }
+
+    var sql = "INSERT INTO buildingGame (`state`, `buildingId`, `user`, `animalId`, `action`, `hashedAction`) " +
+              "VALUES " + Array(validParticipations.length).fill(`('WAITING', ?, ?, ?, ?, ?)`).join(', ') + ";";
+    var params = validParticipations.reduce((all, p) => all.concat([ gameId, user, p.animalId, p.action, p.hashedAction ]), []);
 
     db.query(sql, params).then(() => {
-        res.status(200).json({ result: true });
-        checkMatches(game);
+        res.status(200).json({ succeed: validParticipations, failed: invalidParticipations });
+        checkMatches(gameId);
     }).catch(error => {
-        res.status(200).json({ err: error });
-        console.err(`buildingGame.js:participateMany ${error}.`);
+        res.status(200).json({ err: `${error}` });
+        console.error(`buildingGame.js:participateMany ${error}.`);
     });
 }
 
-function checkMatches(game) {
-    var sql = "SELECT bg.`user`, bg.`animalID`, bg.`action`, bg.`hash` " +
+// Needs user to sign
+export function cancelMany(gameId, animalIds, res) {
+    deleteParticipations(gameId, animalIds)
+        .then(() => res.status(200).json({ success: true }))
+        .catch(error => res.status(200).json({ err: `${error}` }));
+}
+
+function checkData(gameId, participations) {
+    return new Promise((resolve, reject) => {
+        buildingGameContract.methods.getGameParticipationByAnimalIds(gameId, participations.map(p => p.animalId)).call((error, realParticipations) => {
+            if (error) {
+                console.log(`buildingGame.js:checkData ${error}`);
+                reject(error);
+                return;
+            }
+
+            var validParticipations = [];
+            var invalidParticipations = [];
+            participations.forEach((participation, i) => {
+                if (realParticipations[i].animalId != 0) {
+                    var hashedAction = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ parseInt(participation.action), participation.hashedAction, parseInt(realParticipations[i].nonce) ]);
+
+                    if (hashedAction == realParticipations[i].hashedAction) {
+                        validParticipations.push(participation);
+                    } else {
+                        console.log(`buildingGame.js:checkData Invalid participation for animal ${participation.animalId}`);
+                        invalidParticipations.push(participation);
+                    }
+                } else {
+                    console.log(`buildingGame.js:checkData Invalid participation for animal ${participation.animalId}`);
+                    invalidParticipations.push(participation);
+                }
+            });
+
+            resolve([ validParticipations, invalidParticipations ]);
+        });
+    });
+}
+
+function checkMatches(gameId) {
+    var sql = "SELECT bg.`user`, bg.`animalId`, bg.`action`, bg.`hashedAction` " +
               "FROM buildingGame bg " +
                 	"JOIN (" +
-                		"SELECT `user`, GROUP_CONCAT(`animalID`) AS `animalIDs` " +
+                		"SELECT `user`, GROUP_CONCAT(`animalId`) AS `animalIds` " +
                 		"FROM buildingGame " +
-                		"WHERE `game` = :? AND `state` = 'WAITING' " +
+                		"WHERE `buildingId` = ? AND `state` = 'WAITING' " +
                 		"GROUP BY `user` " +
-                	") t ON bg.`user` = t.`user` AND FIND_IN_SET(bg.`animalID`, t.`animalIDs`) BETWEEN 1 AND " + MIN_PARTICIPATION / 2 + " " +
+                	") t ON bg.`user` = t.`user` AND FIND_IN_SET(bg.`animalId`, t.`animalIds`) BETWEEN 1 AND " + MIN_PARTICIPATION / 2 + " " +
               "ORDER BY bg.`timestamp` " +
               "LIMIT " + MIN_PARTICIPATION + ";";
-    var params = [ game ];
+    var params = [ gameId ];
 
-    db.query(sql, params).then(result => {
-        if (result.length == MIN_PARTICIPATION) {
-            initiateMatchMaking(game, result);
+    db.query(sql, params).then(participations => {
+        if (participations.length == MIN_PARTICIPATION) {
+            initiateMatchMaking(gameId, participations);
         }
-    }).catch(error => console.err(`buildingGame.js:checkMatches ${error}.`));
+    }).catch(error => console.error(`buildingGame.js:checkMatches ${error}.`));
 }
 
-function initiateMatchMaking(game, data) {
-    // var users = [];
-    var animalIDs = [];
-    var actions = [];
-    var hashes = [];
+async function initiateMatchMaking(gameId, participations) {
+    var animalIds = participations.map(p => p.animalId);
 
-    data.forEach(row => {
-        // users.push(el.user);
-        animalIDs.push(row.animalID);
-        actions.push(row.action);
-        hashes.push(row.hash);
-    });
+    switchState(gameId, animalIds, 'PROCESSING');
 
-    switchState(game, animalIDs, 'PROCESSING');
-    checkData(game, /* users, */ animalIDs, actions, hashes);
+    const [ validParticipations, invalidParticipations ] = await checkData(gameId, participations);
+    if (invalidParticipations.length == 0) {
+        makeMatches(gameId, validParticipations);
+    } else {
+        console.error(`buildingGame.js:initiateMatchMaking Canceled match making.`);
+
+        var validAnimalIds = validParticipations.map(p => p.animalId);
+        var invalidAnimalIds = invalidParticipations.map(p => p.animalId);
+
+        switchState(gameId, validAnimalIds, 'WAITING');
+        deleteParticipations(gameId, invalidAnimalIds);
+        checkMatches(gameId);
+    }
 }
 
-function switchState(game, animalIDs, state) {
+function switchState(gameId, animalIds, state) {
     var sql = "UPDATE buildingGame " +
           "SET `state` = '" + state + "' " +
-          "WHERE `game` = :? AND `animalID` IN (" + data.map(row => row.animalID).join(', ') + ")";
-    var params = [ game ];
+          "WHERE `buildingId` = ? AND `animalID` IN (" + animalIds.map(() => '?').join(', ') + ")";
+    var params = [ gameId, ...animalIds ];
 
-    db.query(sql, params).catch(error => console.err(`buildingGame.js:switchState ${error}.`));
+    db.query(sql, params).catch(error => console.error(`buildingGame.js:switchState ${state} for animals ${animalIds} ${error}`));
 }
 
-function checkData(game, /* users, */ animalIDs, actions, hashes) {
-    buildingGameContract.methods.participations(game, animalIDs).call((error, result) => {
-        if (error) {
-            console.err(`buildingGame.js:checkData ${error}`);
-            return;
-        }
-
-        var validAnimalIDs = [];
-        for (var i=0; i<animalIDs.length; i++) {
-            var hashedAction = web3.sha3(
-                web3.utils.toHex(actions[i]) +
-                web3.utils.toHex(hashes[i]) +
-                web3.utils.toHex(result[i].nonce
-            ), { encoding: 'hex' });
-
-            if (hashedAction != result[i].hashedAction) {
-                var sql = "DELETE FROM buildingGame " +
-                          "WHERE `game` = :? AND `animalID` = :?;";
-                var params = [ game, animalIDs[i] ];
-
-                db.query(sql, params).catch(error => console.err(`buildingGame.js:checkData ${error}.`));
-            } else {
-                validAnimalIDs.push(animalIDs[i]);
-            }
-        }
-
-        if (validAnimalIDs.length == animalIDs.length) {
-            makeMatches(game, /* users, */ animalIDs, actions, hashes);
-        } else {
-            switchState(game, validAnimalIDs, 'WAITING');
-            checkMatches(game);
-        }
-    });
-}
-
-function makeMatches(game, /* users, */ animalIDs, actions, hashes) {
-    buildingGameContract.methods.makeMatches(/* users, */ animalIDs, actions, hashes).call((error, result) => {
-        if (error) {
-            console.log(`buildingGame.js:makeMatches ${error}`)
-            return;
-        }
-
+function deleteParticipations(gameId, animalIds) {
+    return new Promise((resolve, reject) => {
         var sql = "DELETE FROM buildingGame " +
-                  "WHERE `game` = :? AND `animalID` IN (" + animalIDs.map(animalID => ':?').join(', ') + ");";
-        var params = [ game, ...animalIDs ];
+                  "WHERE `buildingId` = ? AND `animalId` IN (" + animalIds.map(() => '?').join(', ') + ");";
+        var params = [ gameId, ...animalIds ];
 
-        db.query(sql, params).catch(error => console.err(`buildingGame.js:makeMatches Tokens: ${animalIDs} ${error}.`));
+        db.query(sql, params).then(() => resolve(true)).catch(error => {
+            console.error(`buildingGame.js:deleteParticipations With animals ${animalIds} ${error}.`)
+            reject(error);
+        });
     });
 }
 
-const buildingGame = { participateMany };
+function makeMatches(gameId, participations) {
+    web3.eth.getTransactionCount(account, async (err, txCount) => {
+        var sql = "SELECT `name` FROM building WHERE `id` = ?;";
+        var params = [ gameId ];
+
+        db.query(sql, params).then(async result => {
+
+            const signature = await web3.eth.sign(keccak256([ 'string' ], [ result[0].name ]), account);
+
+            var animalIds = [];
+            var actions = [];
+            var passwords = [];
+
+            participations.forEach(p => {
+                animalIds.push(p.animalId);
+                animalIds.push(p.action);
+                animalIds.push(p.hashedAction);
+            });
+
+            const txObject = {
+                nonce: web3.utils.toHex(txCount),
+                to: buildingGameAddress,
+                gasLimit: web3.utils.toHex(8000000),
+                gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+                data: buildingGameContract.methods.makeMatches(signature, gameId, animalIds, actions, passwords).encodeABI()
+            };
+
+            const tx = new Tx.Transaction(txObject, { common: chain });
+            tx.sign(privateKey);
+
+            web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`, (err, txHash) => {
+                if (err) {
+                    console.log(`buildingGame.js:makeMatches With animals ${animalIds} ${err}`);
+                    return;
+                }
+
+                console.log(`$WTWool txHash: ${txHash}`);
+                deleteParticipations(animalIds);
+            });
+
+        }).catch(error => {
+            console.error(`buildingGame.js:makeMatches ${error}.`)
+            reject(error);
+        });
+    });
+}
+
+const buildingGame = { participateMany, cancelMany };
 
 export default buildingGame;

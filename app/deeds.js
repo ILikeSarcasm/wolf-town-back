@@ -8,13 +8,11 @@ const web3 = new Web3(process.env.RPC_PROVIDER);
 const wtdeedAddress = process.env.BUILDING_GAME_MANAGER_CONTRACT;
 const wtdeedContract = new web3.eth.Contract(wtdeedABI, wtdeedAddress);
 
-const connection = mysql.createConnection(config);
-
 export function deedURI(deedID, req, res) {
     var sql = "SELECT d.`id`, b.`name`, d.`points` " +
               "FROM deed d " +
               "LEFT JOIN building b ON d.`buildingId` = b.`id` " +
-              "WHERE d.`id` = :?;";
+              "WHERE d.`id` = ?;";
     var params = [ deedID ];
 
     db.query(sql, params).then(result => {
@@ -22,26 +20,26 @@ export function deedURI(deedID, req, res) {
             wtanimalContract.methods.getDeeds([ deedID ]).call((error, deeds) => {
                 if (error) {
                     console.log(`deeds.js:deedURI ${error}`);
-                    res.status(200).json({ err: error.data });
+                    res.status(200).json({ err: `${error.data}` });
                     return;
                 }
 
                 var data = { id: deedID, ...deeds[0] };
-                toDB(data).catch(error => console.err(`deeds.js:deedURI ${error}.`));
+                toDB(data).catch(error => console.error(`deeds.js:deedURI ${error}.`));
                 res.status(200).json(getMetadata(data));
             });
         } else {
             res.status(200).json(getMetadata(result));
         }
     }).catch(error => {
-        res.status(200).json({ err: error });
-        console.err(`deeds.js:deedURI ${error}.`);
+        res.status(200).json({ err: `${error}` });
+        console.error(`deeds.js:deedURI ${error}.`);
     });
 }
 
 export function deedURIs(deedIDs, req, res) {
     var sql = "SELECT t.`id` " +
-              "FROM (VALUES " + deedIDs.map(deedID => 'ROW(:?)').join(', ') + ") t(`id`) " +
+              "FROM (VALUES " + deedIDs.map(deedID => 'ROW(?)').join(', ') + ") t(`id`) " +
               "LEFT JOIN deed d ON t.`id` = d.`id` " +
               "WHERE d.`id` IS NULL;";
     var params = [ deedIDs ];
@@ -55,13 +53,13 @@ export function deedURIs(deedIDs, req, res) {
             wtdeedContract.methods.getDeeds(results.map(result => result.id)).call(async (error, deeds) => {
                 if (error) {
                     console.log(`animals.js:deedURIs ${error}`);
-                    res.status(200).json({ err: error });
+                    res.status(200).json({ err: `${error}` });
                     return;
                 }
 
                 deeds.forEach((deed, i) => {
                     var data = { id: results[i], ...deed };
-                    promises.push(toDB(data).catch(error => console.err(`deeds.js:deedURIs ${error}.`)));
+                    promises.push(toDB(data).catch(error => console.error(`deeds.js:deedURIs ${error}.`)));
                 });
             });
         }
@@ -70,21 +68,21 @@ export function deedURIs(deedIDs, req, res) {
             var sql = "SELECT d.`id`, b.`name`, d.`points` " +
                       "FROM deed " +
                       "LEFT JOIN building b ON d.`buildingId` = b.`id` " +
-                      "WHERE d.`id` IN (" + deedIDs.map(deedID => ':?').join(', ') + ");";
+                      "WHERE d.`id` IN (" + deedIDs.map(deedID => '?').join(', ') + ");";
             var params = [ deedIDs ];
 
             db.query(sql, params).then(deeds => {
                 deeds.forEach(deed => metadatas[deed.id] = getMetadata(deed));
                 res.status(200).json(metadatas);
             }).catch(error => {
-                res.status(200).json({ err: error });
-                console.err(`deeds.js:deedURIs ${error}.`);
+                res.status(200).json({ err: `${error}` });
+                console.error(`deeds.js:deedURIs ${error}.`);
             });
         });
 
     }).catch(error => {
-        res.status(200).json({ err: error });
-        console.err(`deeds.js:deedURIs ${error}.`);
+        res.status(200).json({ err: `${error}` });
+        console.error(`deeds.js:deedURIs ${error}.`);
     });
 }
 
@@ -107,14 +105,14 @@ function getMetadata(deed) {
 async function toDB(deed) {
     return new Promise((resolve, reject) => {
         var sql = "INSERT INTO deeds (`id`, `buildingID`, `points`) " +
-                  "VALUES (:?, '" + deed.buildingId + "', " + deed.points + ");";
+                  "VALUES (?, '" + deed.buildingId + "', " + deed.points + ");";
         var params = [ deed.id ];
 
         db.query(sql, params).then(result => {
             resolve(deed);
         }).catch(error => {
             reject(error);
-            console.err(`deeds.js:toDB ${error}.`);
+            console.error(`deeds.js:toDB ${error}.`);
         });
     });
 }

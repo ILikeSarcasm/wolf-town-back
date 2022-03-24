@@ -19,7 +19,7 @@ export function tokenURI(tokenID, req, res) {
         wtanimalContract.methods.totalSupply().call((error, totalSupply) => {
             if (error) {
                 console.log(`animals.js:tokenURI ${error}`);
-                res.status(200).json({ err: error.data });
+                res.status(200).json({ err: `${error.data}` });
                 return;
             }
 
@@ -32,7 +32,7 @@ export function tokenURI(tokenID, req, res) {
             wtanimalContract.methods.tokenTraits(tokenID).call(async (error, traits) => {
                 if (error) {
                     console.log(`animals.js:tokenURI ${error}`);
-                    res.status(200).json({ err: error.data });
+                    res.status(200).json({ err: `${error.data}` });
                     return;
                 }
 
@@ -43,7 +43,7 @@ export function tokenURI(tokenID, req, res) {
         fs.readFile(metadataPath, (error, json) => {
             if (error) {
                 console.log(`animals.js:tokenURI ${error}`);
-                res.status(200).json({ err: error.data });
+                res.status(200).json({ err: `${error.data}` });
             } else {
                 res.status(200).json(JSON.parse(json));
             }
@@ -56,7 +56,7 @@ export function tokenURIs(tokenIDs, req, res) {
         wtAPIContract.methods.WTAnimalURIs(tokenIDs, wtanimalAddress).call(async (error, traitsArray) => {
             if (error) {
                 console.log(`animals.js:tokenURIs ${error}`);
-                reject({ err: error });
+                reject({ err: `${error}` });
                 return;
             }
 
@@ -73,12 +73,12 @@ export function tokenURIs(tokenIDs, req, res) {
                         try {
                             metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
                         } catch (error) {
-                            console.error(`animals.js:tokenURIs ${error}`);
+                            console.erroror(`animals.js:tokenURIs ${error}`);
                             metadata = { data: error };
                         }
                     }
                 } else {
-                    console.error(`animals.js:tokenURIs Token ${tokenIDs[i]} does not exist.`);
+                    console.erroror(`animals.js:tokenURIs Token ${tokenIDs[i]} does not exist.`);
                     metadata = { data: `Token ${tokenIDs[i]} does not exist.` }
                 }
 

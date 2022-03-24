@@ -586,6 +586,52 @@ const abi = [
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256[]",
+				"name": "_animalIds",
+				"type": "uint256[]"
+			}
+		],
+		"name": "getGameParticipationByAnimalIds",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "participant",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "animalId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "hashedAction",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "nonce",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct BuildingGameManager.Participation[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_gameId",
+				"type": "uint256"
+			},
+			{
 				"internalType": "uint256",
 				"name": "_index",
 				"type": "uint256"
