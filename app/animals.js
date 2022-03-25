@@ -43,7 +43,7 @@ export function tokenURI(tokenID, req, res) {
         fs.readFile(metadataPath, (error, json) => {
             if (error) {
                 console.log(`animals.js:tokenURI ${error}`);
-                res.status(200).json({ err: `${error.data}` });
+                res.status(200).json({ err: `${error}` });
             } else {
                 res.status(200).json(JSON.parse(json));
             }
@@ -56,7 +56,7 @@ export function tokenURIs(tokenIDs, req, res) {
         wtAPIContract.methods.WTAnimalURIs(tokenIDs, wtanimalAddress).call(async (error, traitsArray) => {
             if (error) {
                 console.log(`animals.js:tokenURIs ${error}`);
-                reject({ err: `${error}` });
+                res.status(200).json({ err: `${error}` });
                 return;
             }
 
