@@ -281,12 +281,12 @@ const abi = [
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "_deedId",
-				"type": "uint256"
+				"internalType": "uint256[]",
+				"name": "_deedIds",
+				"type": "uint256[]"
 			}
 		],
-		"name": "getDeed",
+		"name": "getDeeds",
 		"outputs": [
 			{
 				"components": [
@@ -301,9 +301,9 @@ const abi = [
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct IWTOwnershipDeed.Deed",
+				"internalType": "struct IWTOwnershipDeed.Deed[]",
 				"name": "",
-				"type": "tuple"
+				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",

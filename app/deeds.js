@@ -5,84 +5,73 @@ import wtdeedABI from './../abi/wtownershipdeed.abi.js';
 
 const web3 = new Web3(process.env.RPC_PROVIDER);
 
-const wtdeedAddress = process.env.BUILDING_GAME_MANAGER_CONTRACT;
+const wtdeedAddress = process.env.WTOWNERSHIP_DEED_CONTRACT;
 const wtdeedContract = new web3.eth.Contract(wtdeedABI, wtdeedAddress);
 
-export function deedURI(deedID, req, res) {
-    var sql = "SELECT d.`id`, b.`name`, d.`points` " +
-              "FROM deed d " +
-              "LEFT JOIN building b ON d.`buildingId` = b.`id` " +
-              "WHERE d.`id` = ?;";
-    var params = [ deedID ];
-
-    db.query(sql, params).then(result => {
-        if (!result.length) {
-            wtanimalContract.methods.getDeeds([ deedID ]).call((error, deeds) => {
-                if (error) {
-                    console.log(`deeds.js:deedURI ${error}`);
-                    res.status(200).json({ err: `${error.data}` });
-                    return;
-                }
-
-                var data = { id: deedID, ...deeds[0] };
-                toDB(data).catch(error => console.error(`deeds.js:deedURI ${error}.`));
-                res.status(200).json(getMetadata(data));
-            });
-        } else {
-            res.status(200).json(getMetadata(result));
-        }
-    }).catch(error => {
-        res.status(200).json({ err: `${error}` });
-        console.error(`deeds.js:deedURI ${error}.`);
-    });
+export function deedURI(deedID, res) {
+    getURIs([ deedID ])
+        .then(metadatas => res.status(200).json(metadatas[deedID]))
+        .catch(error => res.status(200).json({ err: `${error}` }));
 }
 
-export function deedURIs(deedIDs, req, res) {
-    var sql = "SELECT t.`id` " +
-              "FROM (VALUES " + deedIDs.map(deedID => 'ROW(?)').join(', ') + ") t(`id`) " +
-              "LEFT JOIN deed d ON t.`id` = d.`id` " +
-              "WHERE d.`id` IS NULL;";
-    var params = [ deedIDs ];
+export function deedURIs(deedURIs, res) {
+    getURIs(deedURIs)
+        .then(metadatas => res.status(200).json(metadatas))
+        .catch(error => res.status(200).json({ err: `${error}` }));
+}
 
-    db.query(sql, params).then(results => {
+function getURIs(deedIDs) {
+    return new Promise((resolve, reject) => {
+        var sql = "SELECT `id` FROM deed WHERE `id` IN (" + deedIDs.map(() => '?').join(', ') + ");";
+        var params = deedIDs;
 
-        var metadatas = {};
+        db.query(sql, params).then(async rows => {
 
-        var promises = [];
-        if (results.length) {
-            wtdeedContract.methods.getDeeds(results.map(result => result.id)).call(async (error, deeds) => {
-                if (error) {
-                    console.log(`animals.js:deedURIs ${error}`);
-                    res.status(200).json({ err: `${error}` });
-                    return;
-                }
+            var existingIds = rows.map(row => row.id);
+            var missingIds = deedIDs.filter(deedId => !existingIds.includes(deedId));
 
-                deeds.forEach((deed, i) => {
-                    var data = { id: results[i], ...deed };
-                    promises.push(toDB(data).catch(error => console.error(`deeds.js:deedURIs ${error}.`)));
+            var metadatas = {};
+
+            var promises = [];
+            if (missingIds.length) {
+                await wtdeedContract.methods.getDeeds(missingIds).call(async (error, deeds) => {
+                    if (error) {
+                        console.log(`deeds.js:getURIs ${error}`);
+                        reject(error);
+                        return;
+                    }
+
+                    deeds.forEach((deed, i) => {
+                        deed = { id: missingIds[i], ...deed };
+                        if (parseInt(deed.buildingId)) {
+                            promises.push(toDB(deed));
+                        } else {
+                            metadatas[deed.id] = `Deed ${deed.id} does not exist.`;
+                        }
+                    });
+                });
+            }
+
+            Promise.allSettled(promises).then(() => {
+                var sql = "SELECT d.`id`, b.`name`, d.`points` " +
+                          "FROM deed d " +
+                          "LEFT JOIN building b ON d.`buildingId` = b.`id` " +
+                          "WHERE d.`id` IN (" + deedIDs.map(() => '?').join(', ') + ");";
+                var params = deedIDs;
+
+                db.query(sql, params).then(rows => {
+                    rows.forEach(row => metadatas[row.id] = getMetadata(row));
+                    resolve(metadatas);
+                }).catch(error => {
+                    console.error(`deeds.js:getURIs ${sql} ${params} ${error}.`);
+                    reject(error);
                 });
             });
-        }
 
-        Promise.allSettled(promises).then(() => {
-            var sql = "SELECT d.`id`, b.`name`, d.`points` " +
-                      "FROM deed " +
-                      "LEFT JOIN building b ON d.`buildingId` = b.`id` " +
-                      "WHERE d.`id` IN (" + deedIDs.map(deedID => '?').join(', ') + ");";
-            var params = [ deedIDs ];
-
-            db.query(sql, params).then(deeds => {
-                deeds.forEach(deed => metadatas[deed.id] = getMetadata(deed));
-                res.status(200).json(metadatas);
-            }).catch(error => {
-                res.status(200).json({ err: `${error}` });
-                console.error(`deeds.js:deedURIs ${error}.`);
-            });
+        }).catch(error => {
+            console.error(`deeds.js:getURIs ${sql} ${params} ${error}.`);
+            reject(error);
         });
-
-    }).catch(error => {
-        res.status(200).json({ err: `${error}` });
-        console.error(`deeds.js:deedURIs ${error}.`);
     });
 }
 
@@ -102,17 +91,15 @@ function getMetadata(deed) {
     return metadata;
 }
 
-async function toDB(deed) {
+function toDB(deed) {
     return new Promise((resolve, reject) => {
-        var sql = "INSERT INTO deeds (`id`, `buildingID`, `points`) " +
+        var sql = "INSERT INTO deed (`id`, `buildingID`, `points`) " +
                   "VALUES (?, '" + deed.buildingId + "', " + deed.points + ");";
         var params = [ deed.id ];
 
-        db.query(sql, params).then(result => {
-            resolve(deed);
-        }).catch(error => {
+        db.query(sql, params).then(result => resolve(deed)).catch(error => {
+            console.error(`deeds.js:toDB ${sql} ${params} ${error}.`);
             reject(error);
-            console.error(`deeds.js:toDB ${error}.`);
         });
     });
 }

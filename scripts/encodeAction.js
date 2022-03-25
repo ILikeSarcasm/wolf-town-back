@@ -4,11 +4,8 @@ import { ethers } from 'ethers';
 
 const keccak256 = ethers.utils.solidityKeccak256;
 
-const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY, 'hex');
-
 if (process.argv.length <= 5) {
     console.log('Args are <private_key> <action> <game_name> <none>');
-    console.log('See https://app.mycrypto.com/sign-message for message signature.');
     process.exit(1);
 }
 

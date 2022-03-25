@@ -10,10 +10,10 @@ const router = express.Router();
 router.get('/animals/:id', (req, res, next) => animals.tokenURI(parseInt(req.params.id), req, res));
 router.get('/animals', (req, res, next) => animals.tokenURIs(JSON.parse(decodeURIComponent(req.query.ids)), req, res));
 
-router.get('/deeds/:id', (req, res, next) => deeds.deedURI(parseInt(req.params.id), req, res));
-router.get('/deeds', (req, res, next) => deeds.deedURIs(JSON.parse(decodeURIComponent(req.query.ids)), req, res));
+router.get('/deeds/:id', (req, res, next) => deeds.deedURI(parseInt(req.params.id), res));
+router.get('/deeds', (req, res, next) => deeds.deedURIs(JSON.parse(decodeURIComponent(req.query.ids)), res));
 
-router.post('/building-game/participate', (req, res, next) => buildingGame.participateMany(req.query.gameId, req.query.user, JSON.parse(decodeURIComponent(req.query.participations)), res));
+router.post('/building-game/participate', (req, res, next) => buildingGame.participateMany(req.query.gameId, JSON.parse(decodeURIComponent(req.query.participations)), res));
 router.post('/building-game/cancel', (req, res, next) => buildingGame.cancelMany(req.query.gameId, JSON.parse(decodeURIComponent(req.query.animalIds)), res));
 
 router.get('/barn/unstakeOrder1/:address', (req, res, next) => oldBarn.unstakeOrder(req.params.address, true, req, res));

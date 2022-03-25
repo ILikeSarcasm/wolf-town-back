@@ -14,8 +14,9 @@ const chain = Common.default.forCustomChain('mainnet', {
     chainId: parseInt(process.env.CHAIN_ID)
 }, 'petersburg');
 
-const account = process.env.WALLET_PUBLIC_KEY;
+const publicKey = process.env.WALLET_PUBLIC_KEY;
 const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY, 'hex');
+const account = new ethers.Wallet(process.env.WALLET_PRIVATE_KEY);
 
 const buildingGameAddress = process.env.BUILDING_GAME_MANAGER_CONTRACT;
 const buildingGameContract = new web3.eth.Contract(buildingGameABI, buildingGameAddress);
@@ -26,19 +27,17 @@ const MIN_PARTICIPATION = 10;
 
 // Participations => Participation[]
 // Participation => { animalId: ..., action: ..., hashedAction: ... }
-// Needs user to sign
-export async function participateMany(gameId, user, participations, res) {
+export async function participateMany(gameId, participations, res) {
     const [ validParticipations, invalidParticipations ] = await checkData(gameId, participations);
 
     if (validParticipations.length == 0) {
-        console.log(`buildingGame.js:participateMany Invalid data`);
-        res.status(200).json({ err: 'Invalid data' });
+        res.status(200).json({ succeed: validParticipations, failed: invalidParticipations });
         return;
     }
 
-    var sql = "INSERT INTO buildingGame (`state`, `buildingId`, `user`, `animalId`, `action`, `hashedAction`) " +
+    var sql = "REPLACE INTO buildingGame (`state`, `buildingId`, `user`, `animalId`, `action`, `hashedAction`) " +
               "VALUES " + Array(validParticipations.length).fill(`('WAITING', ?, ?, ?, ?, ?)`).join(', ') + ";";
-    var params = validParticipations.reduce((all, p) => all.concat([ gameId, user, p.animalId, p.action, p.hashedAction ]), []);
+    var params = validParticipations.reduce((all, p) => all.concat([ gameId, p.participant, p.animalId, p.action, p.hashedAction ]), []);
 
     db.query(sql, params).then(() => {
         res.status(200).json({ succeed: validParticipations, failed: invalidParticipations });
@@ -49,11 +48,26 @@ export async function participateMany(gameId, user, participations, res) {
     });
 }
 
-// Needs user to sign
 export function cancelMany(gameId, animalIds, res) {
-    deleteParticipations(gameId, animalIds)
-        .then(() => res.status(200).json({ success: true }))
-        .catch(error => res.status(200).json({ err: `${error}` }));
+    buildingGameContract.methods.getGameParticipationByAnimalIds(gameId, animalIds).call((error, participations) => {
+        if (error) {
+            console.log(`buildingGame.js:cancelMany ${error}`);
+            reject(error);
+            return;
+        }
+
+        var invalidAnimalIds = participations.filter(p => p.animalId != '0').map(p => parseInt(p.animalId));
+        var validAnimalIds = animalIds.filter(animalId => !invalidAnimalIds.includes(animalId));
+
+        if (!validAnimalIds.length) {
+            res.status(200).json({ succeed: validAnimalIds, failed: invalidAnimalIds });
+            return;
+        }
+
+        deleteParticipations(gameId, validAnimalIds)
+            .then(() => res.status(200).json({ succeed: validAnimalIds, failed: invalidAnimalIds }))
+            .catch(error => res.status(200).json({ err: `${error}` }));
+    });
 }
 
 function checkData(gameId, participations) {
@@ -68,6 +82,7 @@ function checkData(gameId, participations) {
             var validParticipations = [];
             var invalidParticipations = [];
             participations.forEach((participation, i) => {
+                participation.participant = realParticipations[i].participant;
                 if (realParticipations[i].animalId != 0) {
                     var hashedAction = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ parseInt(participation.action), participation.hashedAction, parseInt(realParticipations[i].nonce) ]);
 
@@ -151,13 +166,19 @@ function deleteParticipations(gameId, animalIds) {
 }
 
 function makeMatches(gameId, participations) {
-    web3.eth.getTransactionCount(account, async (err, txCount) => {
+    web3.eth.getTransactionCount(publicKey, async (err, txCount) => {
+        if (err) {
+            switchState(gameId, participations.map(p => p.animalId), 'WAITING');
+            console.log(`buildingGame.js:makeMatches With animals ${animalIds} ${err}`);
+            return;
+        }
+
         var sql = "SELECT `name` FROM building WHERE `id` = ?;";
         var params = [ gameId ];
 
         db.query(sql, params).then(async result => {
 
-            const signature = await web3.eth.sign(keccak256([ 'string' ], [ result[0].name ]), account);
+            const signature = await account.signMessage(ethers.utils.arrayify(keccak256([ 'string' ], [ result[0].name ])));
 
             var animalIds = [];
             var actions = [];
@@ -165,8 +186,8 @@ function makeMatches(gameId, participations) {
 
             participations.forEach(p => {
                 animalIds.push(p.animalId);
-                animalIds.push(p.action);
-                animalIds.push(p.hashedAction);
+                actions.push(p.action);
+                passwords.push(p.hashedAction);
             });
 
             const txObject = {
@@ -182,17 +203,19 @@ function makeMatches(gameId, participations) {
 
             web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`, (err, txHash) => {
                 if (err) {
+                    switchState(gameId, animalIds, 'WAITING');
                     console.log(`buildingGame.js:makeMatches With animals ${animalIds} ${err}`);
                     return;
                 }
 
-                console.log(`$WTWool txHash: ${txHash}`);
-                deleteParticipations(animalIds);
+                console.log(`BuildingGameManager txHash: ${txHash}`);
+                deleteParticipations(gameId, animalIds);
             });
 
         }).catch(error => {
-            console.error(`buildingGame.js:makeMatches ${error}.`)
-            reject(error);
+            switchState(gameId, participations.map(p => p.animalId), 'WAITING');
+            console.error(`buildingGame.js:makeMatches ${error}.`);
+            return;
         });
     });
 }
