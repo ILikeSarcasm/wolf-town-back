@@ -1,6 +1,7 @@
 import express from 'express';
 
 import animals from './app/animals.js';
+import imageGenerator from './app/imageGenerator.js';
 import buildingGame from './app/buildingGame.js';
 
 const router = express.Router();
