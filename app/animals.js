@@ -42,10 +42,15 @@ export function tokenURI(tokenID, req, res) {
     } else {
         fs.readFile(metadataPath, (error, json) => {
             if (error) {
-                console.log(`animals.js:tokenURI ${error}`);
+                console.log(`animals.js:tokenURI Animal ${tokenID}  ${error}`);
                 res.status(200).json({ err: `${error}` });
             } else {
-                res.status(200).json(JSON.parse(json));
+                try {
+                    res.status(200).json(JSON.parse(json));
+                } catch (error) {
+                    console.log(`animals.js:tokenURI Animal ${tokenID} ${error}`);
+                    res.status(200).json({ err: `${error}` });
+                }
             }
         });
     }
@@ -73,12 +78,12 @@ export function tokenURIs(tokenIDs, req, res) {
                         try {
                             metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
                         } catch (error) {
-                            console.erroror(`animals.js:tokenURIs ${error}`);
+                            console.error(`animals.js:tokenURIs Animal ${tokenID} ${error}`);
                             metadata = { data: error };
                         }
                     }
                 } else {
-                    console.erroror(`animals.js:tokenURIs Token ${tokenIDs[i]} does not exist.`);
+                    console.error(`animals.js:tokenURIs Token ${tokenIDs[i]} does not exist.`);
                     metadata = { data: `Token ${tokenIDs[i]} does not exist.` }
                 }
 

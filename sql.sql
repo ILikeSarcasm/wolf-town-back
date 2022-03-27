@@ -13,11 +13,11 @@
 
 
 -- Listage de la structure de la base pour wolf-town
-DROP DATABASE IF EXISTS `wolf-town`;
 CREATE DATABASE IF NOT EXISTS `wolf-town` /*!40100 DEFAULT CHARACTER SET latin1 */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `wolf-town`;
 
 -- Listage de la structure de la table wolf-town. building
+DROP TABLE IF EXISTS `building`;
 CREATE TABLE IF NOT EXISTS `building` (
   `id` int NOT NULL,
   `name` varchar(50) NOT NULL,
@@ -32,6 +32,7 @@ INSERT INTO `building` (`id`, `name`) VALUES
 /*!40000 ALTER TABLE `building` ENABLE KEYS */;
 
 -- Listage de la structure de la table wolf-town. buildinggame
+DROP TABLE IF EXISTS `buildinggame`;
 CREATE TABLE IF NOT EXISTS `buildinggame` (
   `id` int NOT NULL AUTO_INCREMENT,
   `buildingId` int NOT NULL,
@@ -51,23 +52,6 @@ CREATE TABLE IF NOT EXISTS `buildinggame` (
 DELETE FROM `buildinggame`;
 /*!40000 ALTER TABLE `buildinggame` DISABLE KEYS */;
 /*!40000 ALTER TABLE `buildinggame` ENABLE KEYS */;
-
--- Listage de la structure de la table wolf-town. deed
-CREATE TABLE IF NOT EXISTS `deed` (
-  `id` int NOT NULL,
-  `buildingId` int NOT NULL,
-  `points` int NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK_DEED_BUILDING` (`buildingId`),
-  CONSTRAINT `FK_DEED_BUILDING` FOREIGN KEY (`buildingId`) REFERENCES `deed` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- Listage des données de la table wolf-town.deed : ~1 rows (environ)
-DELETE FROM `deed`;
-/*!40000 ALTER TABLE `deed` DISABLE KEYS */;
-INSERT INTO `deed` (`id`, `buildingId`, `points`) VALUES
-	(1, 1, 600);
-/*!40000 ALTER TABLE `deed` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
