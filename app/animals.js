@@ -119,7 +119,7 @@ function generateTokenImage(tokenID, traits) {
         }
 
         try {
-            base64SmallImage = new Buffer(fs.readFileSync(smallImagePath)).toString('base64');
+            base64SmallImage = new Buffer.from(fs.readFileSync(smallImagePath)).toString('base64');
             resolve(base64SmallImage);
         } catch (error) {
             reject(`animals.js:generateTokenImage Animal ${tokenID} ${error}`);

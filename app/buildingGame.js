@@ -181,9 +181,6 @@ function makeMatches(gameId, participations) {
         var params = [ gameId ];
 
         db.query(sql, params).then(async result => {
-
-            const signature = await account.signMessage(ethers.utils.arrayify(keccak256([ 'string' ], [ result[0].name ])));
-
             var animalIds = [];
             var actions = [];
             var passwords = [];
@@ -199,7 +196,7 @@ function makeMatches(gameId, participations) {
                 to: buildingGameAddress,
                 gasLimit: web3.utils.toHex(8000000),
                 gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
-                data: buildingGameContract.methods.makeMatches(signature, gameId, animalIds, actions, passwords).encodeABI()
+                data: buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).encodeABI()
             };
 
             const tx = new Tx.Transaction(txObject, { common: chain });
