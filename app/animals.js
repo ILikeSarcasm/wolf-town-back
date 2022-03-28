@@ -15,7 +15,7 @@ const BUILDING_NAMES = [ "", "ARENA" ];
 
 export function tokenURI(tokenID, res) {
     getURIs([ tokenID ])
-        .then(metadatas => {console.log("returned");res.status(200).json(metadatas[tokenID])})
+        .then(metadatas => res.status(200).json(metadatas[tokenID]))
         .catch(error => res.status(200).json({ err: `${error}` }));
 }
 
@@ -32,7 +32,7 @@ function getURIs(tokenIDs) {
         wtAPIContract.methods.WTAnimalData(tokenIDs, process.env.WTANIMAL_CONTRACT, process.env.SKILL_MANAGER_CONTRACT, process.env.BUILDING_GAME_MANAGER_CONTRACT).call(async (error, animals) => {
             if (error) {
                 reject(error);
-                return console.log(`animals.js:getURIs ${error}`);
+                return console.error(`animals.js:getURIs ${error}`);
             }
 
             var promises = [];
