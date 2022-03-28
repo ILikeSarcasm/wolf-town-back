@@ -6,8 +6,8 @@ import buildingGame from './app/buildingGame.js';
 
 const router = express.Router();
 
-router.get('/animals/:id', (req, res, next) => animals.tokenURI(parseInt(req.params.id), req, res));
-router.get('/animals', (req, res, next) => animals.tokenURIs(JSON.parse(decodeURIComponent(req.query.ids)), req, res));
+router.get('/animals/:id', (req, res, next) => animals.tokenURI(parseInt(req.params.id), res));
+router.get('/animals', (req, res, next) => animals.tokenURIs(JSON.parse(decodeURIComponent(req.query.ids)), res));
 
 router.get('/generate-image', (req, res, next) => imageGenerator.generateImage(req.query.type, parseInt(req.query.id), res));
 
