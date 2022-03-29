@@ -27,7 +27,7 @@ const MIN_PARTICIPATION = 10;
 
 export function getParticipations(gameId, animalIds, res) {
     var sql = "SELECT `animalId` " +
-              "FROM building-game " +
+              "FROM `building-game` " +
               "WHERE `buildingId` = ? AND `animalId` IN (" + animalIds.map(() => '?').join(', ') + ");";
     var params = [ gameId, ...animalIds ];
 
@@ -51,7 +51,7 @@ export async function participateMany(gameId, participations, res) {
         return;
     }
 
-    var sql = "REPLACE INTO building-game (`state`, `buildingId`, `user`, `animalId`, `action`, `hashedAction`) " +
+    var sql = "REPLACE INTO `building-game` (`state`, `buildingId`, `user`, `animalId`, `action`, `hashedAction`) " +
               "VALUES " + Array(validParticipations.length).fill(`('WAITING', ?, ?, ?, ?, ?)`).join(', ') + ";";
     var params = validParticipations.reduce((all, p) => all.concat([ gameId, p.participant, p.animalId, p.action, p.hashedAction ]), []);
 
@@ -159,10 +159,10 @@ function checkMatches(gameId) {
     var sql = "SELECT `user`, `animalId`, `action`, `hashedAction` " +
               "FROM ( " +
                   "SELECT bg.`user`, bg.`animalId`, bg.`action`, bg.`hashedAction` " +
-                  "FROM building-game bg " +
+                  "FROM `building-game` bg " +
                     	"JOIN (" +
                     		"SELECT `user`, GROUP_CONCAT(`animalId`) AS `animalIds` " +
-                    		"FROM building-game " +
+                    		"FROM `building-game` " +
                     		"WHERE `buildingId` = ? AND `state` = 'WAITING' " +
                     		"GROUP BY `user` " +
                     	") t ON bg.`user` = t.`user` AND FIND_IN_SET(bg.`animalId`, t.`animalIds`) BETWEEN 1 AND " + MIN_PARTICIPATION / 2 + " " +
@@ -200,7 +200,7 @@ async function initiateMatchMaking(gameId, participations) {
 }
 
 function switchState(gameId, animalIds, state) {
-    var sql = "UPDATE building-game " +
+    var sql = "UPDATE `building-game` " +
           "SET `state` = '" + state + "' " +
           "WHERE `buildingId` = ? AND `animalID` IN (" + animalIds.map(() => '?').join(', ') + ")";
     var params = [ gameId, ...animalIds ];
@@ -210,7 +210,7 @@ function switchState(gameId, animalIds, state) {
 
 function deleteParticipations(gameId, animalIds) {
     return new Promise((resolve, reject) => {
-        var sql = "DELETE FROM building-game " +
+        var sql = "DELETE FROM `building-game` " +
                   "WHERE `buildingId` = ? AND `animalId` IN (" + animalIds.map(() => '?').join(', ') + ");";
         var params = [ gameId, ...animalIds ];
 
