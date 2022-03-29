@@ -101,9 +101,8 @@ export function submitAgain(gameId, animalIds, password, res) {
         var participations = [];
         animalIds.forEach((animalId, i) => {
             var action = 0;
-            var hashedPassword = ethers.utils.hashMessage(password + gameId + parseInt(animalId) + realParticipations[i].nonce);
-
-            var hash1 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, hashedPassword, parseInt(realParticipations[i].nonce) ]);
+            // var hashedPassword = ethers.utils.hashMessage(password + gameId + parseInt(animalId) + realParticipations[i].nonce);
+            var hash1 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, password, parseInt(realParticipations[i].nonce) ]);
             var hash2 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, hash1, parseInt(realParticipations[i].nonce) ]);
 
             if (hash2 != realParticipations[i].hashedAction) {
