@@ -90,37 +90,6 @@ export function cancelMany(gameId, animalIds, res) {
     });
 }
 
-export function submitAgain(gameId, animalIds, password, res) {
-    buildingGameContract.methods.getGameParticipationByAnimalIds(gameId, animalIds).call((error, realParticipations) => {
-        if (error) {
-            console.log(`buildingGame.js:submitAgain ${error}`);
-            reject(error);
-            return;
-        }
-
-        var participations = [];
-        animalIds.forEach((animalId, i) => {
-            var action = 0;
-            // var hashedPassword = ethers.utils.hashMessage(password + gameId + parseInt(animalId) + realParticipations[i].nonce);
-            var hash1 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, password, parseInt(realParticipations[i].nonce) ]);
-            var hash2 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, hash1, parseInt(realParticipations[i].nonce) ]);
-
-            if (hash2 != realParticipations[i].hashedAction) {
-                action = 1;
-                hash1 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, hashedPassword, parseInt(realParticipations[i].nonce) ]);
-            }
-
-            participations.push({
-                animalId: animalId,
-                action: action,
-                hashedAction: hash1
-            });
-        });
-
-        participateMany(gameId, participations, res);
-    });
-}
-
 function checkData(gameId, participations) {
     return new Promise((resolve, reject) => {
         buildingGameContract.methods.getGameParticipationByAnimalIds(gameId, participations.map(p => p.animalId)).call((error, realParticipations) => {
@@ -274,6 +243,6 @@ function makeMatches(gameId, participations) {
     });
 }
 
-const buildingGame = { getParticipations, participateMany, cancelMany, submitAgain };
+const buildingGame = { getParticipations, participateMany, cancelMany };
 
 export default buildingGame;
