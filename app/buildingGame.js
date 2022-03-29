@@ -233,6 +233,8 @@ function makeMatches(gameId, participations) {
 
                 console.log(`BuildingGameManager txHash: ${txHash}`);
                 deleteParticipations(gameId, animalIds);
+
+                checkMatches(gameId);
             });
 
         }).catch(error => {

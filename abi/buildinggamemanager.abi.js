@@ -71,6 +71,37 @@ const abi = [
 				"type": "address"
 			},
 			{
+				"indexed": false,
+				"internalType": "uint256[]",
+				"name": "tokenIds",
+				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"name": "Cancel",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "gameId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "participant",
+				"type": "address"
+			},
+			{
 				"indexed": true,
 				"internalType": "uint256",
 				"name": "tokenId",
@@ -78,13 +109,13 @@ const abi = [
 			},
 			{
 				"indexed": false,
-				"internalType": "enum BuildingGameManager.PlayingAction",
+				"internalType": "enum IBuildingGameManager.PlayingAction",
 				"name": "action",
 				"type": "uint8"
 			},
 			{
 				"indexed": false,
-				"internalType": "enum BuildingGameManager.PlayingResult",
+				"internalType": "enum IBuildingGameManager.PlayingResult",
 				"name": "result",
 				"type": "uint8"
 			},
@@ -120,10 +151,10 @@ const abi = [
 				"type": "address"
 			},
 			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
+				"indexed": false,
+				"internalType": "uint256[]",
+				"name": "tokenIds",
+				"type": "uint256[]"
 			},
 			{
 				"indexed": false,
@@ -238,6 +269,19 @@ const abi = [
 	},
 	{
 		"inputs": [],
+		"name": "POINTS_EXTRACTER",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "bankAddress",
 		"outputs": [
 			{
@@ -274,7 +318,7 @@ const abi = [
 						"type": "uint80"
 					}
 				],
-				"internalType": "struct BuildingGameManager.Costs",
+				"internalType": "struct IBuildingGameManager.Costs",
 				"name": "_costs",
 				"type": "tuple"
 			},
@@ -325,7 +369,7 @@ const abi = [
 				"type": "uint256[]"
 			}
 		],
-		"name": "extractAnimalPoints",
+		"name": "extractGameAnimalPoints",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -393,7 +437,7 @@ const abi = [
 						"type": "uint80"
 					}
 				],
-				"internalType": "struct BuildingGameManager.Costs",
+				"internalType": "struct IBuildingGameManager.Costs",
 				"name": "costs",
 				"type": "tuple"
 			},
@@ -416,11 +460,6 @@ const abi = [
 				"internalType": "uint256",
 				"name": "maximumPoints",
 				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "waitingListLength",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -429,7 +468,7 @@ const abi = [
 	{
 		"inputs": [
 			{
-				"internalType": "enum BuildingGameManager.PlayingAction",
+				"internalType": "enum IBuildingGameManager.PlayingAction",
 				"name": "_action",
 				"type": "uint8"
 			},
@@ -479,6 +518,11 @@ const abi = [
 					},
 					{
 						"internalType": "uint256",
+						"name": "userWaitingListIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
 						"name": "points",
 						"type": "uint256"
 					},
@@ -488,7 +532,7 @@ const abi = [
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct BuildingGameManager.AnimalData",
+				"internalType": "struct IBuildingGameManager.AnimalData",
 				"name": "",
 				"type": "tuple"
 			}
@@ -504,29 +548,12 @@ const abi = [
 				"type": "uint256"
 			}
 		],
-		"name": "getGameCosts",
+		"name": "getGameName",
 		"outputs": [
 			{
-				"components": [
-					{
-						"internalType": "uint80",
-						"name": "inBNB",
-						"type": "uint80"
-					},
-					{
-						"internalType": "uint80",
-						"name": "inWTWool",
-						"type": "uint80"
-					},
-					{
-						"internalType": "uint80",
-						"name": "inWTMilk",
-						"type": "uint80"
-					}
-				],
-				"internalType": "struct BuildingGameManager.Costs",
+				"internalType": "string",
 				"name": "",
-				"type": "tuple"
+				"type": "string"
 			}
 		],
 		"stateMutability": "view",
@@ -570,7 +597,7 @@ const abi = [
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct BuildingGameManager.Participation",
+				"internalType": "struct IBuildingGameManager.Participation",
 				"name": "",
 				"type": "tuple"
 			}
@@ -616,7 +643,7 @@ const abi = [
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct BuildingGameManager.Participation[]",
+				"internalType": "struct IBuildingGameManager.Participation[]",
 				"name": "",
 				"type": "tuple[]"
 			}
@@ -662,9 +689,89 @@ const abi = [
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct BuildingGameManager.Participation",
+				"internalType": "struct IBuildingGameManager.Participation",
 				"name": "",
 				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_gameId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "getGameParticipationLengthByAddress",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_gameId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_from",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_to",
+				"type": "uint256"
+			}
+		],
+		"name": "getGameParticipationsByAddress",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "participant",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "animalId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "hashedAction",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "nonce",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct IBuildingGameManager.Participation[]",
+				"name": "",
+				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
@@ -824,11 +931,6 @@ const abi = [
 	{
 		"inputs": [
 			{
-				"internalType": "bytes",
-				"name": "_signature",
-				"type": "bytes"
-			},
-			{
 				"internalType": "uint256",
 				"name": "_gameId",
 				"type": "uint256"
@@ -839,7 +941,7 @@ const abi = [
 				"type": "uint256[]"
 			},
 			{
-				"internalType": "enum BuildingGameManager.PlayingAction[]",
+				"internalType": "enum IBuildingGameManager.PlayingAction[]",
 				"name": "_actions",
 				"type": "uint8[]"
 			},
@@ -914,6 +1016,35 @@ const abi = [
 		"name": "participate",
 		"outputs": [],
 		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_gameId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_animalId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_points",
+				"type": "uint256"
+			}
+		],
+		"name": "removeGameAnimalPoints",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1026,7 +1157,7 @@ const abi = [
 						"type": "uint80"
 					}
 				],
-				"internalType": "struct BuildingGameManager.Costs",
+				"internalType": "struct IBuildingGameManager.Costs",
 				"name": "_costs",
 				"type": "tuple"
 			}
@@ -1088,6 +1219,19 @@ const abi = [
 	{
 		"inputs": [
 			{
+				"internalType": "contract ISkillManager",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "setSkillManagerContract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256[4][2]",
 				"name": "_skillRewards",
 				"type": "uint256[4][2]"
@@ -1137,25 +1281,12 @@ const abi = [
 	{
 		"inputs": [
 			{
-				"internalType": "contract ISkillManager",
-				"name": "_address",
-				"type": "address"
-			}
-		],
-		"name": "setskillManagerContract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "contract IERC721",
 				"name": "_address",
 				"type": "address"
 			}
 		],
-		"name": "setwtanimalContract",
+		"name": "setWTAnimalContract",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1168,7 +1299,20 @@ const abi = [
 				"type": "address"
 			}
 		],
-		"name": "setwtmilkContract",
+		"name": "setWTMilkContract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract IWTOwnershipDeed",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "setWTOwnershipDeedContract",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1181,7 +1325,7 @@ const abi = [
 				"type": "address"
 			}
 		],
-		"name": "setwtwoolContract",
+		"name": "setWTWoolContract",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
