@@ -33,7 +33,7 @@ export function getParticipations(gameId, animalIds, res) {
 
     db.query(sql, params).then(rows => {
         var validAnimalIds = rows.map(row => parseInt(row.animalId));
-        var invalidAnimalIds = animalIds.filter(animalId => !validAnimalIds.includes(animalId));
+        var invalidAnimalIds = animalIds.filter(animalId => !validAnimalIds.includes(parseInt(animalId)));
         res.status(200).json({ succeed: validAnimalIds, failed: invalidAnimalIds });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
@@ -55,7 +55,7 @@ export async function participateMany(gameId, participations, res) {
               "VALUES " + Array(validParticipations.length).fill(`('WAITING', ?, ?, ?, ?, ?)`).join(', ') + ";";
     var params = validParticipations.reduce((all, p) => all.concat([ gameId, p.participant, p.animalId, p.action, p.hashedAction ]), []);
 
-    console.log(`Participating with animals ${participations.map(p => p.animalId)}`);
+    console.log(`Participating with animals ${validParticipations.map(p => p.animalId)}`);
 
     db.query(sql, params).then(() => {
         res.status(200).json({ succeed: validParticipations, failed: invalidParticipations });
@@ -75,7 +75,7 @@ export function cancelMany(gameId, animalIds, res) {
         }
 
         var invalidAnimalIds = participations.filter(p => p.animalId != '0').map(p => parseInt(p.animalId));
-        var validAnimalIds = animalIds.filter(animalId => !invalidAnimalIds.includes(animalId));
+        var validAnimalIds = animalIds.filter(animalId => !invalidAnimalIds.includes(parseInt(animalId)));
 
         if (!validAnimalIds.length) {
             res.status(200).json({ succeed: validAnimalIds, failed: invalidAnimalIds });
@@ -99,16 +99,16 @@ export function submitAgain(gameId, animalIds, password, res) {
         }
 
         var participations = [];
-        var validAnimalIds = [];
-        var invalidAnimalIds = [];
         animalIds.forEach((animalId, i) => {
             var action = 0;
-            var hash1 = keccak256([ 'uint256', 'string', 'uint256' ], [ action, password, parseInt(realParticipations[i].nonce) ]);
+            var hashedPassword = ethers.utils.hashMessage(password + gameId + parseInt(animalId) + realParticipations[i].nonce);
+
+            var hash1 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, hashedPassword, parseInt(realParticipations[i].nonce) ]);
             var hash2 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, hash1, parseInt(realParticipations[i].nonce) ]);
 
             if (hash2 != realParticipations[i].hashedAction) {
                 action = 1;
-                hash1 = keccak256([ 'uint256', 'string', 'uint256' ], [ action, password, parseInt(realParticipations[i].nonce) ]);
+                hash1 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ action, hashedPassword, parseInt(realParticipations[i].nonce) ]);
             }
 
             participations.push({
