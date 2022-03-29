@@ -15,10 +15,10 @@ function connect() {
     }
   });
 
-  connection.on('error', function(err) {
+  connection.on('error', function(error) {
     console.error(`database.js ${error}`);
-    if(err.code === 'PROTOCOL_CONNECTION_LOST') connect();
-    else throw err;
+    if(error.code === 'PROTOCOL_CONNECTION_LOST') connect();
+    else throw error;
   });
 }
 
