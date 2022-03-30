@@ -169,6 +169,11 @@ const abi = [
 		"name": "WTAnimalData",
 		"outputs": [
 			{
+				"internalType": "uint256[]",
+				"name": "animalIds",
+				"type": "uint256[]"
+			},
+			{
 				"components": [
 					{
 						"internalType": "bool",
@@ -261,6 +266,11 @@ const abi = [
 					},
 					{
 						"internalType": "uint256",
+						"name": "userWaitingListIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
 						"name": "points",
 						"type": "uint256"
 					},
@@ -273,6 +283,151 @@ const abi = [
 				"internalType": "struct Struct.Ownership[][]",
 				"name": "ownership",
 				"type": "tuple[][]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "gameId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "ids_",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "contract APIAnimal",
+				"name": "erc721_",
+				"type": "address"
+			},
+			{
+				"internalType": "contract APISkill",
+				"name": "skill_",
+				"type": "address"
+			},
+			{
+				"internalType": "contract APIBuildingGame",
+				"name": "buildingGame_",
+				"type": "address"
+			}
+		],
+		"name": "WTAnimalDataOfGameId",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "bool",
+						"name": "isSheep",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint8",
+						"name": "fur",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "head",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "ears",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "eyes",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "nose",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "mouth",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "neck",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "feet",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "alpha",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct Struct.WTAnimalTraits[]",
+				"name": "traits",
+				"type": "tuple[]"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "skillId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "points",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "level",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lastSkillLevelUpdate",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Struct.Skill[]",
+				"name": "skills",
+				"type": "tuple[]"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "waitingListIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "userWaitingListIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "points",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lastPlay",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Struct.Ownership[]",
+				"name": "ownership",
+				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
@@ -357,6 +512,30 @@ const abi = [
 	{
 		"inputs": [
 			{
+				"internalType": "contract IAPIBarn",
+				"name": "_barnContract",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_animalIds",
+				"type": "uint256[]"
+			}
+		],
+		"name": "areSheepStakedForMilk",
+		"outputs": [
+			{
+				"internalType": "bool[]",
+				"name": "b",
+				"type": "bool[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "user_",
 				"type": "address"
@@ -427,6 +606,47 @@ const abi = [
 				"internalType": "uint256[]",
 				"name": "milks",
 				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract IAPIBarn",
+				"name": "_barnContract",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_indexes",
+				"type": "uint256[]"
+			}
+		],
+		"name": "stakesAt",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Struct.Stake[]",
+				"name": "s",
+				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
