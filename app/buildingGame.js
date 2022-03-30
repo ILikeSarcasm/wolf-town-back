@@ -25,7 +25,26 @@ const keccak256 = ethers.utils.solidityKeccak256;
 
 const MIN_PARTICIPATION = 10;
 
-export function getParticipations(gameId, animalIds, res) {
+export function getParticipationRouter(gameId, user, animalIds, res) {
+    if (user) getParticipationsByUser(gameId, user, res);
+    else getParticipationsByAnimals(gameId, animalIds, res);
+}
+
+export function getParticipationsByUser(gameId, user, res) {
+    var sql = "SELECT `animalId` " +
+              "FROM `building-game` " +
+              "WHERE `buildingId` = ? AND `user` = ?;";
+    var params = [ gameId, user ];
+
+    db.query(sql, params).then(rows => {
+        res.status(200).json({ animalsIds: rows.map(row => row.animalId) });
+    }).catch(error => {
+        res.status(200).json({ err: `${error}` });
+        console.error(`buildingGame.js:getParticipationsByUser ${error}.`);
+    });
+}
+
+export function getParticipationsByAnimals(gameId, animalIds, res) {
     var sql = "SELECT `animalId` " +
               "FROM `building-game` " +
               "WHERE `buildingId` = ? AND `animalId` IN (" + animalIds.map(() => '?').join(', ') + ");";
@@ -37,7 +56,7 @@ export function getParticipations(gameId, animalIds, res) {
         res.status(200).json({ succeed: validAnimalIds, failed: invalidAnimalIds });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
-        console.error(`buildingGame.js:getParticipations ${error}.`);
+        console.error(`buildingGame.js:getParticipationsByAnimals ${error}.`);
     });
 }
 
@@ -245,6 +264,6 @@ function makeMatches(gameId, participations) {
     });
 }
 
-const buildingGame = { getParticipations, participateMany, cancelMany };
+const buildingGame = { getParticipationRouter, participateMany, cancelMany };
 
 export default buildingGame;
