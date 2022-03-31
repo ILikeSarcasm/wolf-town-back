@@ -290,6 +290,6 @@ function makeMatches(gameId, participations) {
     });
 }
 
-const buildingGame = { getParticipationRouter, participateMany, cancelMany, runCheckMatches };
+const buildingGame = { getParticipationRouter, participateMany, cancelMany, runCheckMatches, deleteProcessing };
 
 export default buildingGame;
