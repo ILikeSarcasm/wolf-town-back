@@ -25,6 +25,8 @@ const keccak256 = ethers.utils.solidityKeccak256;
 
 const MIN_PARTICIPATION = 10;
 
+var sendingTransaction = false;
+
 export function getParticipationRouter(gameId, user, animalIds, res) {
     if (user) getParticipationsByUser(gameId, user, res);
     else getParticipationsByAnimals(gameId, animalIds, res);
@@ -160,13 +162,15 @@ function checkMatches(gameId) {
     var params = [ gameId ];
 
     db.query(sql, params).then(participations => {
-        if (participations.length == MIN_PARTICIPATION) {
+        if (participations.length == MIN_PARTICIPATION && !sendingTransaction) {
             initiateMatchMaking(gameId, participations);
         }
     }).catch(error => console.error(`buildingGame.js:checkMatches ${error}.`));
 }
 
 async function initiateMatchMaking(gameId, participations) {
+    sendingTransaction = true;
+
     var animalIds = participations.map(p => p.animalId);
 
     switchState(gameId, animalIds, 'PROCESSING');
@@ -175,6 +179,8 @@ async function initiateMatchMaking(gameId, participations) {
     if (invalidParticipations.length == 0) {
         makeMatches(gameId, validParticipations);
     } else {
+        sendingTransaction = false;
+
         console.error(`buildingGame.js:initiateMatchMaking Canceled match making.`);
 
         var validAnimalIds = validParticipations.map(p => p.animalId);
@@ -211,6 +217,7 @@ function deleteParticipations(gameId, animalIds) {
 function makeMatches(gameId, participations) {
     web3.eth.getTransactionCount(publicKey, async (err, txCount) => {
         if (err) {
+            sendingTransaction = false;
             switchState(gameId, participations.map(p => p.animalId), 'WAITING');
             console.log(`buildingGame.js:makeMatches With animals ${animalIds} ${err}`);
             return;
@@ -243,20 +250,21 @@ function makeMatches(gameId, participations) {
             const tx = new Tx.Transaction(txObject, { common: chain });
             tx.sign(privateKey);
 
-            web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`, (err, txHash) => {
-                if (err) {
-                    switchState(gameId, animalIds, 'WAITING');
+            web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`)
+                .on('transactionHash', txHash => console.log(`BuildingGameManager txHash: ${txHash}`))
+                .on('receipt', txReceipt => {
+                    sendingTransaction = false;
+                    deleteParticipations(gameId, animalIds);
+                    checkMatches(gameId);
+                })
+                .on('error', error => {
                     console.log(`buildingGame.js:makeMatches With animals ${animalIds} ${err}`);
-                    return;
-                }
-
-                console.log(`BuildingGameManager txHash: ${txHash}`);
-                deleteParticipations(gameId, animalIds);
-
-                checkMatches(gameId);
-            });
+                    sendingTransaction = false;
+                    switchState(gameId, animalIds, 'WAITING');
+                });
 
         }).catch(error => {
+            sendingTransaction = false;
             switchState(gameId, participations.map(p => p.animalId), 'WAITING');
             console.error(`buildingGame.js:makeMatches ${error}.`);
             return;

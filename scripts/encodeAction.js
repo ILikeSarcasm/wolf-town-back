@@ -11,7 +11,7 @@ if (process.argv.length <= 4) {
 
 const account = new ethers.Wallet(process.argv[2]);
 
-const password = await account.signMessage(JSON.stringify({ user: account.getAddress(), play: 'WolfTown Building' }));
+const password = await account.signMessage('ARENA');
 const hash1 = keccak256([ 'uint256', 'string', 'uint256' ], [ parseInt(process.argv[3]), password, parseInt(process.argv[4]) ]);
 const hash2 = keccak256([ 'uint256', 'bytes32', 'uint256' ], [ parseInt(process.argv[3]), hash1, parseInt(process.argv[4]) ]);
 
