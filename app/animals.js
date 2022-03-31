@@ -62,7 +62,7 @@ function generateTokenMetadata(tokenID, data) {
                     });
                 }
             });
-            
+
             var metadata = {
                 id: tokenID,
                 name: `${data.traits.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
@@ -81,8 +81,8 @@ function generateTokenMetadata(tokenID, data) {
                     { trait_type: 'feet', value: bodyPartsData[7][parseInt(data.traits['feet'])].name },
                     { trait_type: 'alpha', value: data.traits.isSheep ? "None" : bodyPartsData[10][parseInt(data.traits['alpha'])].name },
 
-                    { trait_type: 'building skill level', value: data.skills[1].level },
-                    { trait_type: 'stealing skill level', value: data.skills[2].level },
+                    { trait_type: 'building skill', value: `Level ${data.skills[1].level} (${data.skills[1].points} points)` },
+                    { trait_type: 'stealing skill', value: `Level ${data.skills[2].level} (${data.skills[2].points} points)` },
 
                     ...ownerships
                 ]

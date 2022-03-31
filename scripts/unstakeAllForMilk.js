@@ -26,43 +26,49 @@ const apiContract = new web3.eth.Contract(apiABI, apiAddress);
 const BATCH_SIZE = 50;
 
 var batch = [];
-var remainingTokensToProcess = 0;
+var totalTokenToProcess = 0;
+var processedTokens = 0;
+
+var nonce = await web3.eth.getTransactionCount(publicKey);
 
 barnContract.methods.totalStakes().call((error, totalTokens) => {
     if (error) return console.log(`unstakeAllForMilk.js Calling totalStakes ${error}`);
-    remainingTokensToProcess = totalTokens;
+    totalTokenToProcess = totalTokens;
     processNextBatch();
 });
 
 function processNextBatch() {
-    var batchSize = remainingTokensToProcess - BATCH_SIZE >= 0 ? BATCH_SIZE : remainingTokensToProcess;
-    remainingTokensToProcess -= batchSize;
+    var batchSize = processedTokens + BATCH_SIZE <= totalTokenToProcess ? BATCH_SIZE : totalTokenToProcess - processedTokens;
+    var indexes = Array.from([...Array(batchSize).keys()].map(k => k + processedTokens));
+    processedTokens += batchSize;
 
-    apiContract.methods.stakesAt(barnAddress, Array.from([...Array(batchSize).keys()].map(k => k + batch.length))).call((error, stakes) => {
+    apiContract.methods.stakesAt(barnAddress, indexes).call((error, stakes) => {
         if (error) return console.log(`unstakeAllForMilk.js Calling stakesAt ${error}`);
-        console.log(`${batchSize} stake fetched`);
+        console.log(`${processedTokens} / ${totalTokenToProcess} stake fetched`);
 
         apiContract.methods.areSheepStakedForMilk(barnAddress, stakes.map(stake => stake.tokenId)).call((error, results) => {
             if (error) return console.log(`unstakeAllForMilk.js Calling areSheepStakedForMilk ${error}`);
 
             stakes.forEach((stake, i) => {
-                if (results[i]) batch.push(stake.tokenId)
+                if (results[i]) batch.push(indexes[i])
             });
 
             console.log(`${batch.length} animals are staked for milk`);
-            if (batch.length < BATCH_SIZE * 0.75 && remainingTokensToProcess) processNextBatch();
+            if (batch.length < BATCH_SIZE * 0.75 && processedTokens < totalTokenToProcess) processNextBatch();
             else unstakeBatch();
         });
     });
 }
 
 async function unstakeBatch() {
+    console.log(`Unstaking ${batch}`);
+
     var rawTx = {
-        nonce: web3.utils.toHex(await web3.eth.getTransactionCount(publicKey)),
+        nonce: web3.utils.toHex(nonce),
         to: barnAddress,
-        gasLimit: web3.utils.toHex(3000000),
+        gasLimit: web3.utils.toHex(Math.ceil((await barnContract.methods.unstakeByStakeIndexes(batch).estimateGas({ from: publicKey })) * 1.2)),
         gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
-        data: barnContract.methods.unstakeMany(batch).encodeABI()
+        data: barnContract.methods.unstakeByStakeIndexes(batch).encodeABI()
     };
 
     var tx = new Tx.Transaction(rawTx, { common: chain });
@@ -71,7 +77,13 @@ async function unstakeBatch() {
     web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`)
         .on('transactionHash', txHash => console.log(`Barn txHash: ${txHash}`))
         .on('receipt', txReceipt => {
-            console.log(`Barn txReceipt: ${txReceipt}`);
-            processNextBatch();
-        });
+            totalTokens -= batch.length;
+            processedTokens -= batch.length;
+            if (processedTokens < totalTokenToProcess) {
+                batch = [];
+                nonce++;
+                processNextBatch();
+            }
+        })
+        .on('error', error => console.log(`unstakeAllForMilk.js ${error}`));
 }

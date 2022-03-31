@@ -111,6 +111,11 @@ export function cancelMany(gameId, animalIds, res) {
     });
 }
 
+export function runCheckMatches(gameId, res) {
+    checkMatches(gameId);
+    res.status(200).json({ succeed: true });
+}
+
 function checkData(gameId, participations) {
     return new Promise((resolve, reject) => {
         buildingGameContract.methods.getGameParticipationByAnimalIds(gameId, participations.map(p => p.animalId)).call((error, realParticipations) => {
@@ -144,7 +149,7 @@ function checkData(gameId, participations) {
     });
 }
 
-function checkMatches(gameId) {
+export function checkMatches(gameId) {
     var sql = "SELECT `user`, `animalId`, `action`, `hashedAction` " +
               "FROM ( " +
                   "SELECT bg.`user`, bg.`animalId`, bg.`action`, bg.`hashedAction` " +
@@ -272,6 +277,6 @@ function makeMatches(gameId, participations) {
     });
 }
 
-const buildingGame = { getParticipationRouter, participateMany, cancelMany };
+const buildingGame = { getParticipationRouter, participateMany, cancelMany, runCheckMatches };
 
 export default buildingGame;
