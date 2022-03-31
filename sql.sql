@@ -40,13 +40,13 @@ CREATE TABLE IF NOT EXISTS `building-game` (
   `animalId` int NOT NULL,
   `action` tinyint NOT NULL,
   `hashedAction` varchar(100) NOT NULL,
-  `nonce` int NOT NULL,
+  `nonce` bigint NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `animalID` (`animalId`,`buildingId`),
   KEY `FK_BUILDING_GAME_BUILDING` (`buildingId`),
   CONSTRAINT `FK_BUILDING_GAME_BUILDING` FOREIGN KEY (`buildingId`) REFERENCES `building` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=latin1;
 
 -- Listage des données de la table wolf-town.building-game : ~2 rows (environ)
 /*!40000 ALTER TABLE `building-game` DISABLE KEYS */;
