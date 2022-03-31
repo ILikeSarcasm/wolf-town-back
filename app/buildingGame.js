@@ -245,7 +245,7 @@ function makeMatches(gameId, participations) {
             const txObject = {
                 nonce: web3.utils.toHex(txCount),
                 to: buildingGameAddress,
-                gasLimit: web3.utils.toHex(8000000),
+                gasLimit: web3.utils.toHex(Math.ceil((await barnContract.methods.unstakeByStakeIndexes(batch).estimateGas({ from: publicKey })) * 1.2)),
                 gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
                 data: buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).encodeABI()
             };
