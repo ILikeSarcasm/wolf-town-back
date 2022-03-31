@@ -31,13 +31,13 @@ export function getParticipationRouter(gameId, user, animalIds, res) {
 }
 
 export function getParticipationsByUser(gameId, user, res) {
-    var sql = "SELECT `animalId` " +
+    var sql = "SELECT `animalId`, `hashedAction` " +
               "FROM `building-game` " +
               "WHERE `buildingId` = ? AND `user` = ?;";
     var params = [ gameId, user ];
 
     db.query(sql, params).then(rows => {
-        res.status(200).json({ animalsIds: rows.map(row => row.animalId) });
+        res.status(200).json({ participations: rows.map(row => ({ animalId: row.animalId, hashedHash1: ethers.utils.hashMessage(row.hashedAction) })) });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
         console.error(`buildingGame.js:getParticipationsByUser ${error}.`);
@@ -45,7 +45,7 @@ export function getParticipationsByUser(gameId, user, res) {
 }
 
 export function getParticipationsByAnimals(gameId, animalIds, res) {
-    var sql = "SELECT `animalId` " +
+    var sql = "SELECT `animalId`, `hashedAction` " +
               "FROM `building-game` " +
               "WHERE `buildingId` = ? AND `animalId` IN (" + animalIds.map(() => '?').join(', ') + ");";
     var params = [ gameId, ...animalIds ];
@@ -53,7 +53,7 @@ export function getParticipationsByAnimals(gameId, animalIds, res) {
     db.query(sql, params).then(rows => {
         var validAnimalIds = rows.map(row => parseInt(row.animalId));
         var invalidAnimalIds = animalIds.filter(animalId => !validAnimalIds.includes(parseInt(animalId)));
-        res.status(200).json({ succeed: validAnimalIds, failed: invalidAnimalIds });
+        res.status(200).json({ succeed: rows.map(row => ({ animalId: row.animalId, hashedHash1: ethers.utils.hashMessage(row.hashedAction) })), failed: invalidAnimalIds });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
         console.error(`buildingGame.js:getParticipationsByAnimals ${error}.`);

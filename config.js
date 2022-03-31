@@ -11,7 +11,7 @@ if (process.argv.length > 2) {
     path = './.env.dev';
 }
 
+dotenv.config({ path });
+
 if (process.env.ENVIRONMENT == 'live') console.log('Running on mainnet');
 else console.log('Running on testnet');
-
-dotenv.config({ path });

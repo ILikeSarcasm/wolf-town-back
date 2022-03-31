@@ -23,7 +23,7 @@ const barnContract = new web3.eth.Contract(barnABI, barnAddress);
 const apiAddress = process.env.WTAPI_CONTRACT;
 const apiContract = new web3.eth.Contract(apiABI, apiAddress);
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 50;
 
 var batch = [];
 var remainingTokensToProcess = 0;
@@ -37,7 +37,7 @@ barnContract.methods.totalStakes().call((error, totalTokens) => {
 function processNextBatch() {
     var batchSize = remainingTokensToProcess - BATCH_SIZE >= 0 ? BATCH_SIZE : remainingTokensToProcess;
     remainingTokensToProcess -= batchSize;
-    
+
     apiContract.methods.stakesAt(barnAddress, Array.from([...Array(batchSize).keys()].map(k => k + batch.length))).call((error, stakes) => {
         if (error) return console.log(`unstakeAllForMilk.js Calling stakesAt ${error}`);
         console.log(`${batchSize} stake fetched`);
@@ -51,8 +51,7 @@ function processNextBatch() {
 
             console.log(`${batch.length} animals are staked for milk`);
             if (batch.length < BATCH_SIZE * 0.75 && remainingTokensToProcess) processNextBatch();
-            else console.log(batch);
-            // else unstakeBatch();
+            else unstakeBatch();
         });
     });
 }
@@ -63,7 +62,7 @@ async function unstakeBatch() {
         to: barnAddress,
         gasLimit: web3.utils.toHex(3000000),
         gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
-        data: barnAddress.methods.unstake(batch).encodeABI()
+        data: barnContract.methods.unstakeMany(batch).encodeABI()
     };
 
     var tx = new Tx.Transaction(rawTx, { common: chain });
