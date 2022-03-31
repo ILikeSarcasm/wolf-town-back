@@ -116,6 +116,19 @@ export function runCheckMatches(gameId, res) {
     res.status(200).json({ succeed: true });
 }
 
+export function deleteProcessing(gameId, res) {
+    var sql = "DELETE FROM `building-game` " +
+              "WHERE `gameId` = ? AND `status` = 'PENDING';";
+    var params = [ gameId ];
+
+    db.query(sql, params).then(() => {
+        res.status(200).json({ succeed: true });
+    }).catch(error => {
+        res.status(200).json({ err: `${error}` });
+        console.error(`buildingGame.js:deleteProcessing ${error}.`);
+    });
+}
+
 function checkData(gameId, participations) {
     return new Promise((resolve, reject) => {
         buildingGameContract.methods.getGameParticipationByAnimalIds(gameId, participations.map(p => p.animalId)).call((error, realParticipations) => {
@@ -245,7 +258,7 @@ function makeMatches(gameId, participations) {
             const txObject = {
                 nonce: web3.utils.toHex(txCount),
                 to: buildingGameAddress,
-                gasLimit: web3.utils.toHex(Math.ceil((await barnContract.methods.unstakeByStakeIndexes(batch).estimateGas({ from: publicKey })) * 1.2)),
+                gasLimit: web3.utils.toHex(Math.ceil((await buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).estimateGas({ from: publicKey })) * 1.2)),
                 gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
                 data: buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).encodeABI()
             };

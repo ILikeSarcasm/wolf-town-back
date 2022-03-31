@@ -14,6 +14,6 @@ router.get('/generate-image', (req, res, next) => imageGenerator.generateImage(r
 router.get('/building-game/participations', (req, res, next) => buildingGame.getParticipationRouter(req.query.gameId, req.query.user, JSON.parse(decodeURIComponent(req.query.animalIds ? req.query.animalIds : '[]')), res));
 router.post('/building-game/participate', (req, res, next) => buildingGame.participateMany(req.query.gameId, JSON.parse(decodeURIComponent(req.query.participations)), res));
 router.post('/building-game/cancel', (req, res, next) => buildingGame.cancelMany(req.query.gameId, JSON.parse(decodeURIComponent(req.query.animalIds)), res));
-router.get('/building-game/check-matches', (req, res, next) => buildingGame.runCheckMatches(req.query.gameId, res));
+router.post('/building-game/check-matches/:id', (req, res, next) => buildingGame.runCheckMatches(req.query.gameId, res));
 
 export default router;
