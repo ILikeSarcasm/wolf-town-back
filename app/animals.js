@@ -53,6 +53,16 @@ function getURIs(tokenIDs) {
 function generateTokenMetadata(tokenID, data) {
     return new Promise((resolve, reject) => {
         generateTokenImage(tokenID, data.traits).then(base64SmallImage => {
+            var ownerships = [];
+            data.ownership.forEach((ownership, i) => {
+                if (ownership.points != '0') {
+                    ownerships.push({
+                        trait_type: BUILDING_NAMES[i],
+                        value: ownership.points
+                    });
+                }
+            });
+            
             var metadata = {
                 id: tokenID,
                 name: `${data.traits.isSheep ? 'Sheep': 'Wolf'} #${tokenID}`,
@@ -74,9 +84,7 @@ function generateTokenMetadata(tokenID, data) {
                     { trait_type: 'building skill level', value: data.skills[1].level },
                     { trait_type: 'stealing skill level', value: data.skills[2].level },
 
-                    ...data.ownership.filter(ownership => ownership.points != '0').map(ownership =>
-                        ({ trait_type: BUILDING_NAMES[parseInt(ownership.building)], value: ownership.points })
-                    )
+                    ...ownerships
                 ]
             };
 
