@@ -6,6 +6,7 @@ const RETRY_COOLDOWN = 2000;
 var connection;
 
 function connect() {
+  console.log(`database.js Connecting database`);
   connection = mysql.createConnection(config);
 
   connection.connect(error => {
