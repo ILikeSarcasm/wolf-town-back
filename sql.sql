@@ -13,24 +13,25 @@
 
 
 -- Listage de la structure de la base pour wolf-town
-DROP DATABASE IF EXISTS `wolf-town`;
 CREATE DATABASE IF NOT EXISTS `wolf-town` /*!40100 DEFAULT CHARACTER SET latin1 */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `wolf-town`;
 
 -- Listage de la structure de la table wolf-town. building
+DROP TABLE IF EXISTS `building`;
 CREATE TABLE IF NOT EXISTS `building` (
   `id` int NOT NULL,
   `name` varchar(50) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- Listage des données de la table wolf-town.building : ~1 rows (environ)
+-- Listage des données de la table wolf-town.building : ~0 rows (environ)
 /*!40000 ALTER TABLE `building` DISABLE KEYS */;
 INSERT INTO `building` (`id`, `name`) VALUES
 	(1, 'ARENA');
 /*!40000 ALTER TABLE `building` ENABLE KEYS */;
 
 -- Listage de la structure de la table wolf-town. building-game
+DROP TABLE IF EXISTS `building-game`;
 CREATE TABLE IF NOT EXISTS `building-game` (
   `id` int NOT NULL AUTO_INCREMENT,
   `buildingId` int NOT NULL,
@@ -39,14 +40,15 @@ CREATE TABLE IF NOT EXISTS `building-game` (
   `animalId` int NOT NULL,
   `action` tinyint NOT NULL,
   `hashedAction` varchar(100) NOT NULL,
+  `nonce` int NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `animalID` (`animalId`,`buildingId`),
   KEY `FK_BUILDING_GAME_BUILDING` (`buildingId`),
   CONSTRAINT `FK_BUILDING_GAME_BUILDING` FOREIGN KEY (`buildingId`) REFERENCES `building` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
 
--- Listage des données de la table wolf-town.building-game : ~0 rows (environ)
+-- Listage des données de la table wolf-town.building-game : ~2 rows (environ)
 /*!40000 ALTER TABLE `building-game` DISABLE KEYS */;
 /*!40000 ALTER TABLE `building-game` ENABLE KEYS */;
 
