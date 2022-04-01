@@ -28,20 +28,26 @@ const MAX_TRANSACTION_TIME = 300000;
 
 var Transaction = { processing: false, txHash: '0', timestamp: 0 };
 
-export function getParticipationRouter(gameId, user, animalIds, res) {
-    if (user) getParticipationsByUser(gameId, user, res);
+export function getParticipationRouter(gameId, req, res) {
+    var animalIds = JSON.parse(decodeURIComponent(req.query.animalIds ? req.query.animalIds : '[]'));
+    var from = parseInt(req.query.from) || 0;
+    var to = parseInt(req.query.to) || 10000;
+
+    if (req.query.user) getParticipationsByUser(gameId, req.query.user, res);
     else if (animalIds.length) getParticipationsByAnimals(gameId, animalIds, res);
-    else getParticipations(gameId, res);
+    else getParticipations(gameId, from, to, res);
 }
 
-export function getParticipations(gameId, res) {
+export function getParticipations(gameId, from, to, res) {
     var sql = "SELECT `user`, `animalId`, `timestamp` " +
               "FROM `building-game` " +
-              "WHERE `buildingId` = ?;";
+              "WHERE `buildingId` = ? " +
+              "ORDER BY `timestamp`" +
+              (to ? " LIMIT " + from + ", " + to + ";" : ";");
     var params = [ gameId ];
-
+    
     db.query(sql, params).then(rows => {
-        res.status(200).json({ participations: rows });
+        res.status(200).json({ participations: rows, totalParticipations: rows.length });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
         console.error(`[ERROR] buildingGame.js:getParticipations ${error}.`);
