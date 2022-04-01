@@ -45,9 +45,27 @@ export function getParticipations(gameId, from, to, res) {
               "ORDER BY `timestamp`" +
               (to ? " LIMIT " + from + ", " + to + ";" : ";");
     var params = [ gameId ];
-    
-    db.query(sql, params).then(rows => {
-        res.status(200).json({ participations: rows, totalParticipations: rows.length });
+
+    db.query(sql, params).then(rows1 => {
+
+        var sql = "SELECT `user`, COUNT(*) AS `total` " +
+                  "FROM (" +
+                      "SELECT `user`, `animalId`, `timestamp` " +
+                      "FROM `building-game` " +
+                      "WHERE `buildingId` = ? " +
+                      "ORDER BY `timestamp`" +
+                      (to ? " LIMIT " + from + ", " + to : "") +
+                  ") t " +
+                  "GROUP BY `user`;";
+        var params = [ gameId ];
+
+        db.query(sql, params).then(rows2 => {
+            res.status(200).json({ participations: rows1, total: rows1.length, totalByUser: rows2 });
+        }).catch(error => {
+            res.status(200).json({ err: `${error}` });
+            console.error(`[ERROR] buildingGame.js:getParticipations ${error}.`);
+        });
+
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
         console.error(`[ERROR] buildingGame.js:getParticipations ${error}.`);
@@ -61,7 +79,7 @@ export function getParticipationsByUser(gameId, user, res) {
     var params = [ gameId, user ];
 
     db.query(sql, params).then(rows => {
-        res.status(200).json({ participations: rows.map(row => ({ animalId: row.animalId, hashedHash1: ethers.utils.hashMessage(row.hashedAction), nonce: row.nonce })) });
+        res.status(200).json({ participations: rows.map(row => ({ animalId: row.animalId, hashedHash1: ethers.utils.hashMessage(row.hashedAction), nonce: row.nonce })), total: rows.length });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
         console.error(`[ERROR] buildingGame.js:getParticipationsByUser ${error}.`);
@@ -77,7 +95,7 @@ export function getParticipationsByAnimals(gameId, animalIds, res) {
     db.query(sql, params).then(rows => {
         var validAnimalIds = rows.map(row => parseInt(row.animalId));
         var invalidAnimalIds = animalIds.filter(animalId => !validAnimalIds.includes(parseInt(animalId)));
-        res.status(200).json({ succeed: rows.map(row => ({ animalId: row.animalId, hashedHash1: ethers.utils.hashMessage(row.hashedAction), nonce: row.nonce })), failed: invalidAnimalIds });
+        res.status(200).json({ participations: rows.map(row => ({ animalId: row.animalId, hashedHash1: ethers.utils.hashMessage(row.hashedAction), nonce: row.nonce })), total: rows.length, failed: invalidAnimalIds });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
         console.error(`[ERROR] buildingGame.js:getParticipationsByAnimals ${error}.`);
