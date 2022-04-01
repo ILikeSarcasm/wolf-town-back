@@ -29,7 +29,22 @@ var sendingTransaction = false;
 
 export function getParticipationRouter(gameId, user, animalIds, res) {
     if (user) getParticipationsByUser(gameId, user, res);
-    else getParticipationsByAnimals(gameId, animalIds, res);
+    else if (animalIds.length) getParticipationsByAnimals(gameId, animalIds, res);
+    else getParticipations(gameId, res);
+}
+
+export function getParticipations(gameId, res) {
+    var sql = "SELECT `user`, `animalId`, `timestamp` " +
+              "FROM `building-game` " +
+              "WHERE `buildingId` = ?;";
+    var params = [ gameId ];
+
+    db.query(sql, params).then(rows => {
+        res.status(200).json({ participations: rows });
+    }).catch(error => {
+        res.status(200).json({ err: `${error}` });
+        console.error(`buildingGame.js:getParticipations ${error}.`);
+    });
 }
 
 export function getParticipationsByUser(gameId, user, res) {
@@ -118,7 +133,7 @@ export function runCheckMatches(gameId, res) {
 
 export function deleteProcessing(gameId, res) {
     var sql = "DELETE FROM `building-game` " +
-              "WHERE `gameId` = ? AND `status` = 'PENDING';";
+              "WHERE `buildingId` = ? AND `state` = 'PROCESSING';";
     var params = [ gameId ];
 
     db.query(sql, params).then(() => {
