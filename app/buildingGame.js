@@ -14,9 +14,8 @@ const chain = Common.default.forCustomChain('mainnet', {
     chainId: parseInt(process.env.CHAIN_ID)
 }, 'petersburg');
 
-const publicKey = process.env.WALLET_PUBLIC_KEY;
-const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY, 'hex');
-const account = new ethers.Wallet(process.env.WALLET_PRIVATE_KEY);
+const publicKey = process.env.BUILDING_GAME_PUBLIC_KEY;
+const privateKey = Buffer.from(process.env.BUILDING_GAME_PRIVATE_KEY, 'hex');
 
 const buildingGameAddress = process.env.BUILDING_GAME_MANAGER_CONTRACT;
 const buildingGameContract = new web3.eth.Contract(buildingGameABI, buildingGameAddress);
@@ -41,7 +40,7 @@ export function getParticipationRouter(gameId, req, res) {
 export function getParticipations(gameId, from, to, res) {
     var sql = "SELECT `user`, `animalId`, `timestamp` " +
               "FROM `building-game` " +
-              "WHERE `buildingId` = ? " +
+              "WHERE `buildingId` = ? AND `state` = 'WAITING' " +
               "ORDER BY `timestamp`" +
               (to ? " LIMIT " + from + ", " + to + ";" : ";");
     var params = [ gameId ];
@@ -52,7 +51,7 @@ export function getParticipations(gameId, from, to, res) {
                   "FROM (" +
                       "SELECT `user`, `animalId`, `timestamp` " +
                       "FROM `building-game` " +
-                      "WHERE `buildingId` = ? " +
+                      "WHERE `buildingId` = ? AND `state` = 'WAITING' " +
                       "ORDER BY `timestamp`" +
                       (to ? " LIMIT " + from + ", " + to : "") +
                   ") t " +
@@ -321,7 +320,7 @@ function makeMatches(gameId, participations) {
             web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`)
                 .on('transactionHash', txHash => {
                     console.log(`[LOG] BuildingGameManager Sending ${txHash}`);
-                    Transaction.hash = txHash;
+                    Transaction.txHash = txHash;
                 })
                 .on('receipt', txReceipt => {
                     console.log(`[LOG] BuildingGameManager Succeed ${Transaction.txHash}`);
