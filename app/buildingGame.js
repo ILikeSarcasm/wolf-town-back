@@ -213,7 +213,7 @@ export function checkMatches(gameId) {
 }
 
 function checkTransactionTime() {
-    if (Date.now() - Transaction.timestamp >= MAX_TRANSACTION_TIME) {
+    if (Transaction.timestamp && Date.now() - Transaction.timestamp >= MAX_TRANSACTION_TIME) {
         console.log('[LOG] BuildingGameManager Transaction reset because maximum time exceeded.')
         Transaction = { processing: false, txHash: '0', timestamp: 0 };
     }
@@ -285,7 +285,7 @@ function makeMatches(gameId, participations) {
                 nonce: web3.utils.toHex(txCount),
                 to: buildingGameAddress,
                 gasLimit: web3.utils.toHex(Math.ceil((await buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).estimateGas({ from: publicKey })) * 1.2)),
-                gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+                gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
                 data: buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).encodeABI()
             };
 
