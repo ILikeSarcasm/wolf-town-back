@@ -24,8 +24,9 @@ const buildingGameContract = new web3.eth.Contract(buildingGameABI, buildingGame
 const keccak256 = ethers.utils.solidityKeccak256;
 
 const MIN_PARTICIPATION = 10;
+const MAX_TRANSACTION_TIME = 300000;
 
-var sendingTransaction = false;
+var Transaction = { processing: false, txHash: '0', timestamp: 0 };
 
 export function getParticipationRouter(gameId, user, animalIds, res) {
     if (user) getParticipationsByUser(gameId, user, res);
@@ -43,7 +44,7 @@ export function getParticipations(gameId, res) {
         res.status(200).json({ participations: rows });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
-        console.error(`buildingGame.js:getParticipations ${error}.`);
+        console.error(`[ERROR] buildingGame.js:getParticipations ${error}.`);
     });
 }
 
@@ -57,7 +58,7 @@ export function getParticipationsByUser(gameId, user, res) {
         res.status(200).json({ participations: rows.map(row => ({ animalId: row.animalId, hashedHash1: ethers.utils.hashMessage(row.hashedAction), nonce: row.nonce })) });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
-        console.error(`buildingGame.js:getParticipationsByUser ${error}.`);
+        console.error(`[ERROR] buildingGame.js:getParticipationsByUser ${error}.`);
     });
 }
 
@@ -73,7 +74,7 @@ export function getParticipationsByAnimals(gameId, animalIds, res) {
         res.status(200).json({ succeed: rows.map(row => ({ animalId: row.animalId, hashedHash1: ethers.utils.hashMessage(row.hashedAction), nonce: row.nonce })), failed: invalidAnimalIds });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
-        console.error(`buildingGame.js:getParticipationsByAnimals ${error}.`);
+        console.error(`[ERROR] buildingGame.js:getParticipationsByAnimals ${error}.`);
     });
 }
 
@@ -91,21 +92,21 @@ export async function participateMany(gameId, participations, res) {
               "VALUES " + Array(validParticipations.length).fill(`('WAITING', ?, ?, ?, ?, ?, ?)`).join(', ') + ";";
     var params = validParticipations.reduce((all, p) => all.concat([ gameId, p.participant, p.animalId, p.action, p.hashedAction, p.nonce ]), []);
 
-    console.log(`Participating with animals ${validParticipations.map(p => p.animalId)}`);
+    console.log(`[LOG] BuildingGameManager Participating with animals ${validParticipations.map(p => p.animalId)}`);
 
     db.query(sql, params).then(() => {
         res.status(200).json({ succeed: validParticipations, failed: invalidParticipations });
         checkMatches(gameId);
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
-        console.error(`buildingGame.js:participateMany ${error}.`);
+        console.error(`[ERROR] buildingGame.js:participateMany ${error}.`);
     });
 }
 
 export function cancelMany(gameId, animalIds, res) {
     buildingGameContract.methods.getGameParticipationByAnimalIds(gameId, animalIds).call((error, participations) => {
         if (error) {
-            console.log(`buildingGame.js:cancelMany ${error}`);
+            console.log(`[ERROR] buildingGame.js:cancelMany ${error}`);
             reject(error);
             return;
         }
@@ -118,7 +119,7 @@ export function cancelMany(gameId, animalIds, res) {
             return;
         }
 
-        console.log(`Canceling animals ${validAnimalIds}`);
+        console.log(`[LOG] BuildingGameManager Canceling animals ${validAnimalIds}`);
 
         deleteParticipations(gameId, validAnimalIds)
             .then(() => res.status(200).json({ succeed: validAnimalIds, failed: invalidAnimalIds }))
@@ -127,8 +128,9 @@ export function cancelMany(gameId, animalIds, res) {
 }
 
 export function runCheckMatches(gameId, res) {
-    checkMatches(gameId);
-    res.status(200).json({ succeed: true });
+    checkMatches(gameId)
+        .then(result => res.status(200).json(result))
+        .catch(error => res.status(200).json({ err: `${error}` }));
 }
 
 export function deleteProcessing(gameId, res) {
@@ -140,7 +142,7 @@ export function deleteProcessing(gameId, res) {
         res.status(200).json({ succeed: true });
     }).catch(error => {
         res.status(200).json({ err: `${error}` });
-        console.error(`buildingGame.js:deleteProcessing ${error}.`);
+        console.error(`[ERROR] buildingGame.js:deleteProcessing ${error}.`);
     });
 }
 
@@ -148,7 +150,7 @@ function checkData(gameId, participations) {
     return new Promise((resolve, reject) => {
         buildingGameContract.methods.getGameParticipationByAnimalIds(gameId, participations.map(p => p.animalId)).call((error, realParticipations) => {
             if (error) {
-                console.log(`buildingGame.js:checkData ${error}`);
+                console.error(`[ERROR] buildingGame.js:checkData ${error}`);
                 reject(error);
                 return;
             }
@@ -163,11 +165,11 @@ function checkData(gameId, participations) {
                     if (hashedAction == realParticipations[i].hashedAction) {
                         validParticipations.push(participation);
                     } else {
-                        console.log(`buildingGame.js:checkData Invalid participation for animal ${participation.animalId}`);
+                        console.log(`[LOG] BuildingGameManager Invalid participation for animal ${participation.animalId}`);
                         invalidParticipations.push(participation);
                     }
                 } else {
-                    console.log(`buildingGame.js:checkData Invalid participation for animal ${participation.animalId}`);
+                    console.log(`[LOG] BuildingGameManager Invalid participation for animal ${participation.animalId}`);
                     invalidParticipations.push(participation);
                 }
             });
@@ -178,49 +180,57 @@ function checkData(gameId, participations) {
 }
 
 export function checkMatches(gameId) {
-    var sql = "SELECT `user`, `animalId`, `action`, `hashedAction` " +
-              "FROM ( " +
-                  "SELECT bg.`user`, bg.`animalId`, bg.`action`, bg.`hashedAction` " +
-                  "FROM `building-game` bg " +
-                    	"JOIN (" +
-                    		"SELECT `user`, GROUP_CONCAT(`animalId`) AS `animalIds` " +
-                    		"FROM `building-game` " +
-                    		"WHERE `buildingId` = ? AND `state` = 'WAITING' " +
-                    		"GROUP BY `user` " +
-                    	") t ON bg.`user` = t.`user` AND FIND_IN_SET(bg.`animalId`, t.`animalIds`) BETWEEN 1 AND " + MIN_PARTICIPATION / 2 + " " +
-                  "ORDER BY bg.`timestamp` " +
-                  "LIMIT " + MIN_PARTICIPATION +
-                ") t " +
-                "ORDER BY RAND();";
-    var params = [ gameId ];
+    return new Promise((resolve, reject) => {
+        var sql = "SELECT `user`, `animalId`, `action`, `hashedAction` " +
+                  "FROM ( " +
+                      "SELECT bg.`user`, bg.`animalId`, bg.`action`, bg.`hashedAction` " +
+                      "FROM `building-game` bg " +
+                        	"JOIN (" +
+                        		"SELECT `user`, GROUP_CONCAT(`animalId`) AS `animalIds` " +
+                        		"FROM `building-game` " +
+                        		"WHERE `buildingId` = ? AND `state` = 'WAITING' " +
+                        		"GROUP BY `user` " +
+                        	") t ON bg.`user` = t.`user` AND FIND_IN_SET(bg.`animalId`, t.`animalIds`) BETWEEN 1 AND " + MIN_PARTICIPATION / 2 + " " +
+                      "ORDER BY bg.`timestamp` " +
+                      "LIMIT " + MIN_PARTICIPATION +
+                    ") t " +
+                    "ORDER BY RAND();";
+        var params = [ gameId ];
 
-    db.query(sql, params).then(participations => {
-        if (participations.length == MIN_PARTICIPATION && !sendingTransaction) {
+        db.query(sql, params).then(participations => {
+            checkTransactionTime();
+
+            if (Transaction.processing) return resolve({ succeed: false, message: 'Participation already being processed.' });
+            if (participations.length != MIN_PARTICIPATION) return resolve({ succeed: false, message: 'Not enough participations.' });
+
+            resolve({ succeed: true });
             initiateMatchMaking(gameId, participations);
-        }
-    }).catch(error => console.error(`buildingGame.js:checkMatches ${error}.`));
+        }).catch(error => {
+            console.error(`[ERROR] buildingGame.js:checkMatches ${error}.`);
+            reject(`buildingGame.js:checkMatches ${error}.`);
+        });
+    });
+}
+
+function checkTransactionTime() {
+    if (Date.now() - Transaction.timestamp >= MAX_TRANSACTION_TIME) {
+        console.log('[LOG] BuildingGameManager Transaction reset because maximum time exceeded.')
+        Transaction = { processing: false, txHash: '0', timestamp: 0 };
+    }
 }
 
 async function initiateMatchMaking(gameId, participations) {
-    sendingTransaction = true;
-
     var animalIds = participations.map(p => p.animalId);
-
-    switchState(gameId, animalIds, 'PROCESSING');
 
     const [ validParticipations, invalidParticipations ] = await checkData(gameId, participations);
     if (invalidParticipations.length == 0) {
+        Transaction = { processing: true, txHash: '0', timestamp: Date.now() };
+        switchState(gameId, animalIds, 'PROCESSING');
         makeMatches(gameId, validParticipations);
     } else {
-        sendingTransaction = false;
-
-        console.error(`buildingGame.js:initiateMatchMaking Canceled match making.`);
-
-        var validAnimalIds = validParticipations.map(p => p.animalId);
-        var invalidAnimalIds = invalidParticipations.map(p => p.animalId);
-
-        switchState(gameId, validAnimalIds, 'WAITING');
-        deleteParticipations(gameId, invalidAnimalIds);
+        console.log(`[LOG] BuildingGameManager Canceled match making.`);
+        switchState(gameId, validParticipations.map(p => p.animalId), 'WAITING');
+        deleteParticipations(gameId, invalidParticipations.map(p => p.animalId));
         checkMatches(gameId);
     }
 }
@@ -231,7 +241,7 @@ function switchState(gameId, animalIds, state) {
           "WHERE `buildingId` = ? AND `animalID` IN (" + animalIds.map(() => '?').join(', ') + ")";
     var params = [ gameId, ...animalIds ];
 
-    db.query(sql, params).catch(error => console.error(`buildingGame.js:switchState ${state} for animals ${animalIds} ${error}`));
+    db.query(sql, params).catch(error => console.error(`[ERROR] buildingGame.js:switchState ${error}`));
 }
 
 function deleteParticipations(gameId, animalIds) {
@@ -241,7 +251,7 @@ function deleteParticipations(gameId, animalIds) {
         var params = [ gameId, ...animalIds ];
 
         db.query(sql, params).then(() => resolve(true)).catch(error => {
-            console.error(`buildingGame.js:deleteParticipations With animals ${animalIds} ${error}.`)
+            console.error(`[ERROR] buildingGame.js:deleteParticipations ${error}.`)
             reject(error);
         });
     });
@@ -250,9 +260,10 @@ function deleteParticipations(gameId, animalIds) {
 function makeMatches(gameId, participations) {
     web3.eth.getTransactionCount(publicKey, async (err, txCount) => {
         if (err) {
-            sendingTransaction = false;
+            console.error(`[ERROR] buildingGame.js:makeMatches ${err}`);
+            Transaction = { processing: false, txHash: '0', timestamp: 0 };
             switchState(gameId, participations.map(p => p.animalId), 'WAITING');
-            console.log(`buildingGame.js:makeMatches With animals ${animalIds} ${err}`);
+            checkMatches(gameId);
             return;
         }
 
@@ -278,29 +289,34 @@ function makeMatches(gameId, participations) {
                 data: buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).encodeABI()
             };
 
-            console.log(`Making match with animals ${animalIds}`);
+            console.log(`[LOG] BuildingGameManager Making match with animals ${animalIds}`);
 
             const tx = new Tx.Transaction(txObject, { common: chain });
             tx.sign(privateKey);
 
             web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`)
-                .on('transactionHash', txHash => console.log(`BuildingGameManager txHash: ${txHash}`))
+                .on('transactionHash', txHash => {
+                    console.log(`[LOG] BuildingGameManager Sending ${txHash}`);
+                    Transaction.hash = txHash;
+                })
                 .on('receipt', txReceipt => {
-                    sendingTransaction = false;
+                    console.log(`[LOG] BuildingGameManager Succeed ${Transaction.txHash}`);
+                    Transaction = { processing: false, txHash: '0', timestamp: 0 };
                     deleteParticipations(gameId, animalIds);
                     checkMatches(gameId);
                 })
                 .on('error', error => {
-                    console.log(`buildingGame.js:makeMatches With animals ${animalIds} ${err}`);
-                    sendingTransaction = false;
+                    console.error(`[ERROR] buildingGame.js:makeMatches Failed ${Transaction.txHash} ${error}`);
+                    Transaction = { processing: false, txHash: '0', timestamp: 0 };
                     switchState(gameId, animalIds, 'WAITING');
+                    checkMatches(gameId);
                 });
 
         }).catch(error => {
-            sendingTransaction = false;
+            console.error(`[ERROR] buildingGame.js:makeMatches ${error}.`);
+            Transaction = { processing: false, txHash: '0', timestamp: 0 };
             switchState(gameId, participations.map(p => p.animalId), 'WAITING');
-            console.error(`buildingGame.js:makeMatches ${error}.`);
-            return;
+            checkMatches(gameId);
         });
     });
 }
