@@ -23,7 +23,7 @@ const buildingGameContract = new web3.eth.Contract(buildingGameABI, buildingGame
 const keccak256 = ethers.utils.solidityKeccak256;
 
 const MIN_PARTICIPATION = 10;
-const MAX_TRANSACTION_TIME = 300000;
+const MAX_TRANSACTION_TIME = 60000;
 
 var Transaction = { processing: false, txHash: '0', timestamp: 0 };
 
