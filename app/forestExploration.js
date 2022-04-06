@@ -59,7 +59,7 @@ export async function checkForSeedSpeedUp() {
     forestExplorationContract.getPastEvents('CreateRound', { fromBlock: fromBlock, toBlock: 'latest', filter: { wolfId: 0 } }).then(async events => {
         const nonce = await getNonce();
         const newCheckResult = {};
-        const roundIds = events.map(event => event.returnValues.roundId).filter(roundId => !lastCheckResult[roundId]);
+        const roundIds = events.map(event => event.returnValues.seed).filter(roundId => !lastCheckResult[roundId]);
         const rounds = await Promise.all(roundIds.map(async roundId => getRound(forestExplorationContract, roundId)));
         rounds.forEach(async (round, index) => {
             const roundId = roundIds[index];
