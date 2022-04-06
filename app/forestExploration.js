@@ -21,7 +21,7 @@ const account = new ethers.Wallet(privateKey, new ethers.providers.JsonRpcProvid
 // const forestExplorationAddress = process.env.FOREST_EXPLORATION_MANAGER_CONTRACT;
 
 const REPLAY_TIME = 30000; // 30s
-const DEFAULT_SEED = ethers.utils.solidityKeccak256([ 'string' ], ['DEFAULT_SEED' ]);
+const DEFAULT_SEED = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 function replayAfter(t, f) {
     (new Promise(resolve => setTimeout(resolve, t))).then(f);
