@@ -104,7 +104,7 @@ async function publishSeed(forestExplorationContract, roundId, nonce) {
     const estimateGas = await ethersContract.estimateGas.PublishSeed(roundId, msg);
     const tx = await ethersContract.PublishSeed(roundId, msg, {
         gasLimit: estimateGas.mul(12).div(10),
-        gasPrice: ethers.utils.parseUnits('10', 'gwei'),
+        gasPrice: process.env.ENVIRONMENT === 'dev' ? ethers.utils.parseUnits('10', 'gwei') : ethers.utils.parseUnits('5', 'gwei'),
         nonce
     });
     console.log(`[LOG] ForestExploration Sending ${tx.hash}`);
