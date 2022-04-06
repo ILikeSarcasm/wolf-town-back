@@ -39,6 +39,9 @@ async function getRandomAddressOfWTANIMAL() {
 async function getForestExplorationContract() {
     return new web3.eth.Contract(forestExplorationABI, await getRandomAddressOfWTANIMAL());
 }
+function getForestExplorationEthersContract(address) {
+    return new ethers.Contract(forestExplorationABI, address, account);
+}
 
 async function getNonce() {
     return web3.eth.getTransactionCount(publicKey);
@@ -96,28 +99,38 @@ async function publishSeed(forestExplorationContract, roundId, txCount) {
         return;
     }
     lastPublishTime[roundId] = now;
-    const signature = await account.signMessage(ethers.utils.arrayify(roundId));
-    const txObject = {
-        nonce: web3.utils.toHex(txCount),
-        to: forestExplorationAddress,
-        gasLimit: web3.utils.toHex(Math.ceil((await forestExplorationContract.methods.PublishSeed(roundId, signature).estimateGas({ from: publicKey })) * 1.2)),
-        gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
-        data: forestExplorationContract.methods.PublishSeed(roundId, signature).encodeABI()
-    };
-
+    const ethersContract = getForestExplorationEthersContract(forestExplorationContract.address);
     console.log(`[LOG] ForestExploration Publishing seed for ${roundId}`);
+    const msg = await account.signMessage(ethers.utils.arrayify(roundId));
+    const estimateGas = await ethersContract.estimateGas.PublishSeed(seed, msg);
+    const tx = await ethersContract.PublishSeed(seed, msg, {
+        gasLimit: estimateGas.mul(12).div(10),
+        gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
+    });
+    console.log(`[LOG] ForestExploration Sending ${tx.hash}`);
 
-    const tx = new Tx.Transaction(txObject, { common: chain });
-    tx.sign(privateKey);
+    // const signature = await account.signMessage(ethers.utils.arrayify(roundId));
+    // const txObject = {
+    //     nonce: web3.utils.toHex(txCount),
+    //     to: forestExplorationAddress,
+    //     gasLimit: web3.utils.toHex(Math.ceil((await forestExplorationContract.methods.PublishSeed(roundId, signature).estimateGas({ from: publicKey })) * 1.2)),
+    //     gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
+    //     data: forestExplorationContract.methods.PublishSeed(roundId, signature).encodeABI()
+    // };
 
-    var hash;
-    web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`)
-        .on('transactionHash', txHash => {
-            console.log(`[LOG] ForestExploration Sending ${txHash}`);
-            hash = txHash;
-        })
-        .on('receipt', txReceipt => console.log(`[LOG] ForestExploration Succeed ${hash}`))
-        .on('error', error => console.error(`[ERROR] forestExploration.js:publishSeed Failed ${hash} ${error}`));
+    // console.log(`[LOG] ForestExploration Publishing seed for ${roundId}`);
+
+    // const tx = new Tx.Transaction(txObject, { common: chain });
+    // tx.sign(privateKey);
+
+    // var hash;
+    // web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`)
+    //     .on('transactionHash', txHash => {
+    //         console.log(`[LOG] ForestExploration Sending ${txHash}`);
+    //         hash = txHash;
+    //     })
+    //     .on('receipt', txReceipt => console.log(`[LOG] ForestExploration Succeed ${hash}`))
+    //     .on('error', error => console.error(`[ERROR] forestExploration.js:publishSeed Failed ${hash} ${error}`));
 }
 
 async function touchRound(roundId, res) {
