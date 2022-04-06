@@ -38,20 +38,33 @@ async function getForestExplorationContract() {
     return new web3.eth.Contract(forestExplorationABI, await getRandomAddressOfWTANIMAL());
 }
 
+// 缓存最近一次检查的结果
+let lastCheckResult = {};
+
 export async function checkForSeedSpeedUp() {
     const forestExplorationContract = await getForestExplorationContract();
     // 1 Block every 3 seconds => 10 = 1min
     let fromBlock = (await web3.eth.getBlockNumber()) - 20;
     forestExplorationContract.getPastEvents('CreateRound', { fromBlock: fromBlock, toBlock: 'latest', filter: { wolfId: 0 } }).then(events => {
+        const newCheckResult = {};
         events.forEach(event => {
             const roundId = event.returnValues.seed;
+            if (lastCheckResult[roundId]) {
+                console.log(`[LOG] ForestExploration Already checked ${roundId}`);
+                return;
+            }
             forestExplorationContract.method.getRound(roundId).call((error, round) => {
                 if (error) return console.error(`[ERROR] forestExploration.js:checkForSeedSpeedUp ${error}`);
-                if (round.seed == DEFAULT_SEED) publishSeed(forestExplorationContract, roundId);
+                if (round.seed == DEFAULT_SEED) {
+                    publishSeed(forestExplorationContract, roundId);
+                } else {
+                    newCheckResult[roundId] = true;
+                }
             });
         });
+        lastCheckResult = newCheckResult;
     })
-    .catch(error => console.log(`[ERROR] forestExploration.js:checkForSeedSpeedUp ${err}`))
+    .catch(error => console.log(`[ERROR] forestExploration.js:checkForSeedSpeedUp ${error}`))
     .finally(() => {
         replayAfter(REPLAY_TIME, checkForSeedSpeedUp);
     });
