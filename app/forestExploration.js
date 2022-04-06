@@ -31,7 +31,8 @@ export async function checkForSeedSpeedUp() {
     let fromBlock = (await web3.eth.getBlockNumber()) - 20;
     forestExplorationContract.getPastEvents('CreateRound', { fromBlock: fromBlock, toBlock: 'latest', filter: { wolfId: 0 } }).then(events => {
         events.forEach(event => {
-            forestExplorationContract.method.getRound().call((error, round) => {
+            const roundId = event.returnValues.roundId;
+            forestExplorationContract.method.getRound(roundId).call((error, round) => {
                 if (error) return console.error(`[ERROR] forestExploration.js:checkForSeedSpeedUp ${error}`);
                 if (round.seed == DEFAULT_SEED) publishSeed(roundId);
             });
