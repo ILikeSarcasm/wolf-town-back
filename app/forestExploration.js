@@ -102,8 +102,8 @@ async function publishSeed(forestExplorationContract, roundId, txCount) {
     const ethersContract = getForestExplorationEthersContract(forestExplorationContract.address);
     console.log(`[LOG] ForestExploration Publishing seed for ${roundId}`);
     const msg = await account.signMessage(ethers.utils.arrayify(roundId));
-    const estimateGas = await ethersContract.estimateGas.PublishSeed(seed, msg);
-    const tx = await ethersContract.PublishSeed(seed, msg, {
+    const estimateGas = await ethersContract.estimateGas.PublishSeed(roundId, msg);
+    const tx = await ethersContract.PublishSeed(roundId, msg, {
         gasLimit: estimateGas.mul(12).div(10),
         gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
     });
