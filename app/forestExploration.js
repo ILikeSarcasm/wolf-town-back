@@ -16,9 +16,9 @@ const chain = Common.default.forCustomChain('mainnet', {
 
 const publicKey = process.env.FOREST_EXPLORATION_PUBLIC_KEY;
 const privateKey = Buffer.from(process.env.FOREST_EXPLORATION_PRIVATE_KEY, 'hex');
-const account = new ethers.Wallet(privateKey);
+const account = new ethers.Wallet(privateKey, new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER));
 
-const forestExplorationAddress = process.env.FOREST_EXPLORATION_MANAGER_CONTRACT;
+// const forestExplorationAddress = process.env.FOREST_EXPLORATION_MANAGER_CONTRACT;
 
 const REPLAY_TIME = 30000; // 30s
 const DEFAULT_SEED = ethers.utils.solidityKeccak256([ 'string' ], ['DEFAULT_SEED' ]);
@@ -40,7 +40,7 @@ async function getForestExplorationContract() {
     return new web3.eth.Contract(forestExplorationABI, await getRandomAddressOfWTANIMAL());
 }
 function getForestExplorationEthersContract(address) {
-    return new ethers.Contract(forestExplorationABI, address, account);
+    return new ethers.Contract(address, forestExplorationABI, account);
 }
 
 async function getNonce() {
@@ -54,7 +54,6 @@ async function getRound (forestExplorationContract, roundId) {
 
 // 缓存最近一次检查的结果
 let lastCheckResult = {};
-
 export async function checkForSeedSpeedUp() {
     const forestExplorationContract = await getForestExplorationContract();
     // 1 Block every 3 seconds => 10 = 1min
@@ -99,13 +98,13 @@ async function publishSeed(forestExplorationContract, roundId, nonce) {
         return;
     }
     lastPublishTime[roundId] = now;
-    const ethersContract = getForestExplorationEthersContract(forestExplorationContract.address);
+    const ethersContract = getForestExplorationEthersContract(forestExplorationContract._address);
     console.log(`[LOG] ForestExploration Publishing seed for ${roundId}`);
     const msg = await account.signMessage(ethers.utils.arrayify(roundId));
     const estimateGas = await ethersContract.estimateGas.PublishSeed(roundId, msg);
     const tx = await ethersContract.PublishSeed(roundId, msg, {
         gasLimit: estimateGas.mul(12).div(10),
-        gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
+        gasPrice: ethers.utils.parseUnits('10', 'gwei'),
         nonce
     });
     console.log(`[LOG] ForestExploration Sending ${tx.hash}`);
