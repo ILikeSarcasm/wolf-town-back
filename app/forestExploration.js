@@ -89,7 +89,7 @@ setInterval(() => {
     }
 }, 60 * 60 * 1000);
 
-function publishSeed(forestExplorationContract, roundId, txCount) {
+async function publishSeed(forestExplorationContract, roundId, txCount) {
     const now = Date.now();
     if (inLastPublishTime(roundId)) {
         console.log(`[LOG] ForestExploration Publishing seed for ${roundId}, time diff: ${now - lastPublishTime[roundId]}`);
