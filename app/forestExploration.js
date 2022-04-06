@@ -17,7 +17,6 @@ const publicKey = process.env.FOREST_EXPLORATION_PUBLIC_KEY;
 const privateKey = Buffer.from(process.env.FOREST_EXPLORATION_PRIVATE_KEY, 'hex');
 
 const forestExplorationAddress = process.env.FOREST_EXPLORATION_MANAGER_CONTRACT;
-const forestExplorationContract = new web3.eth.Contract(forestExplorationABI, forestExplorationAddress);
 
 const REPLAY_TIME = 30000; // 30s
 const DEFAULT_SEED = ethers.utils.solidityKeccak256([ 'string' ], ['DEFAULT_SEED' ]);
@@ -26,26 +25,43 @@ function replayAfter(t, f) {
     (new Promise(resolve => setTimeout(resolve, t))).then(f);
 }
 
+async function getRandomAddressOfWTANIMAL() {
+    const wtanAddress = process.env.WTANIMAL_CONTRACT;
+    const wtanContract = new web3.eth.Contract(wtAnimalABI, wtanAddress);
+    const wtanContractInstance = wtanContract.methods;
+
+    const wtanContractInstanceRandomAddress = await wtanContractInstance.randomAddress().call();
+    return wtanContractInstanceRandomAddress;
+}
+
+async function getForestExplorationContract() {
+    return new web3.eth.Contract(forestExplorationABI, await getRandomAddressOfWTANIMAL());
+}
+
 export async function checkForSeedSpeedUp() {
+    const forestExplorationContract = await getForestExplorationContract();
     // 1 Block every 3 seconds => 10 = 1min
     let fromBlock = (await web3.eth.getBlockNumber()) - 20;
     forestExplorationContract.getPastEvents('CreateRound', { fromBlock: fromBlock, toBlock: 'latest', filter: { wolfId: 0 } }).then(events => {
         events.forEach(event => {
-            const roundId = event.returnValues.roundId;
+            const roundId = event.returnValues.seed;
             forestExplorationContract.method.getRound(roundId).call((error, round) => {
                 if (error) return console.error(`[ERROR] forestExploration.js:checkForSeedSpeedUp ${error}`);
-                if (round.seed == DEFAULT_SEED) publishSeed(roundId);
+                if (round.seed == DEFAULT_SEED) publishSeed(forestExplorationContract, roundId);
             });
         });
+    })
+    .catch(error => console.log(`[ERROR] forestExploration.js:checkForSeedSpeedUp ${err}`))
+    .finally(() => {
         replayAfter(REPLAY_TIME, checkForSeedSpeedUp);
-    }).catch(error => console.log(`[ERROR] forestExploration.js:checkForSeedSpeedUp ${err}`));
+    });
 }
 
-function publishSeed(roundId) {
+function publishSeed(forestExplorationContract, roundId) {
     web3.eth.getTransactionCount(publicKey, async (err, txCount) => {
         if (err) return console.error(`[ERROR] forestExploration.js:publishSeed ${err}`);
 
-        const signature = await account.signMessage(roundId);
+        const signature = await account.signMessage(ethers.utils.arrayify(roundId));
         const txObject = {
             nonce: web3.utils.toHex(txCount),
             to: forestExplorationAddress,
