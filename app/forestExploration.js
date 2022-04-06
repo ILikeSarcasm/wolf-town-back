@@ -77,7 +77,7 @@ export async function checkForSeedSpeedUp() {
     });
 }
 
-function publishSeed(forestExplorationContract, roundId, txCount) {
+async function publishSeed(forestExplorationContract, roundId, txCount) {
     const signature = await account.signMessage(ethers.utils.arrayify(roundId));
     const txObject = {
         nonce: web3.utils.toHex(txCount),
