@@ -3,6 +3,7 @@ import Tx from 'ethereumjs-tx';
 import Common from 'ethereumjs-common';
 import { ethers } from 'ethers';
 
+import wtAnimalABI from './../abi/wtanimal.abi.js';
 import forestExplorationABI from './../abi/forestexploration.abi.js';
 
 const web3 = new Web3(process.env.RPC_PROVIDER);
@@ -15,6 +16,7 @@ const chain = Common.default.forCustomChain('mainnet', {
 
 const publicKey = process.env.FOREST_EXPLORATION_PUBLIC_KEY;
 const privateKey = Buffer.from(process.env.FOREST_EXPLORATION_PRIVATE_KEY, 'hex');
+const account = new ethers.Wallet(privateKey);
 
 const forestExplorationAddress = process.env.FOREST_EXPLORATION_MANAGER_CONTRACT;
 
