@@ -92,7 +92,7 @@ setInterval(() => {
     }
 }, 60 * 60 * 1000);
 
-async function publishSeed(forestExplorationContract, roundId, txCount) {
+async function publishSeed(forestExplorationContract, roundId, nonce) {
     const now = Date.now();
     if (inLastPublishTime(roundId)) {
         console.log(`[LOG] ForestExploration Publishing seed for ${roundId}, time diff: ${now - lastPublishTime[roundId]}`);
@@ -106,6 +106,7 @@ async function publishSeed(forestExplorationContract, roundId, txCount) {
     const tx = await ethersContract.PublishSeed(roundId, msg, {
         gasLimit: estimateGas.mul(12).div(10),
         gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
+        nonce
     });
     console.log(`[LOG] ForestExploration Sending ${tx.hash}`);
 
