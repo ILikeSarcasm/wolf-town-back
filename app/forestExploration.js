@@ -42,6 +42,11 @@ async function getNonce() {
     return web3.eth.getTransactionCount(publicKey);
 }
 
+async function getRound (forestExplorationContract, roundId) {
+    const round = await forestExplorationContract.methods.getRound(roundId).call();
+    return round;
+}
+
 // 缓存最近一次检查的结果
 let lastCheckResult = {};
 
@@ -52,20 +57,15 @@ export async function checkForSeedSpeedUp() {
     forestExplorationContract.getPastEvents('CreateRound', { fromBlock: fromBlock, toBlock: 'latest', filter: { wolfId: 0 } }).then(async events => {
         const nonce = await getNonce();
         const newCheckResult = {};
-        events.forEach((event, index) => {
-            const roundId = event.returnValues.seed;
-            if (lastCheckResult[roundId]) {
-                console.log(`[LOG] ForestExploration Already checked ${roundId}`);
-                return;
+        const roundIds = events.map(event => event.returnValues.roundId).filter(roundId => !lastCheckResult[roundId]);
+        const rounds = await Promise.all(roundIds.map(async roundId => getRound(forestExplorationContract, roundId)));
+        rounds.forEach(async (round, index) => {
+            const roundId = roundIds[index];
+            if (round.seed == DEFAULT_SEED) {
+                publishSeed(forestExplorationContract, roundId, nonce + index);
+            } else {
+                newCheckResult[roundId] = true;
             }
-            forestExplorationContract.method.getRound(roundId).call((error, round) => {
-                if (error) return console.error(`[ERROR] forestExploration.js:checkForSeedSpeedUp ${error}`);
-                if (round.seed == DEFAULT_SEED) {
-                    publishSeed(forestExplorationContract, roundId, nonce + index);
-                } else {
-                    newCheckResult[roundId] = true;
-                }
-            });
         });
         lastCheckResult = newCheckResult;
     })
@@ -75,7 +75,25 @@ export async function checkForSeedSpeedUp() {
     });
 }
 
+
+const PUBLISH_SEED_MIN_TIME_DIFF = 60000; // 60s
+const lastPublishTime = {};
+const inLastPublishTime = (roundId) => lastPublishTime[roundId] && lastPublishTime[roundId] + PUBLISH_SEED_MIN_TIME_DIFF > Date.now();
+
+// Empty invalid data and optimize memory.
+setInterval(() => {
+    for (const key in lastPublishTime) {
+        if (!inLastPublishTime(key)) delete lastPublishTime[key];
+    }
+}, 60 * 60 * 1000);
+
 function publishSeed(forestExplorationContract, roundId, txCount) {
+    const now = Date.now();
+    if (inLastPublishTime(roundId)) {
+        console.log(`[LOG] ForestExploration Publishing seed for ${roundId}, time diff: ${now - lastPublishTime[roundId]}`);
+        return;
+    }
+    lastPublishTime[roundId] = now;
     const signature = await account.signMessage(ethers.utils.arrayify(roundId));
     const txObject = {
         nonce: web3.utils.toHex(txCount),
@@ -100,6 +118,13 @@ function publishSeed(forestExplorationContract, roundId, txCount) {
         .on('error', error => console.error(`[ERROR] forestExploration.js:publishSeed Failed ${hash} ${error}`));
 }
 
-const forestExploration = { checkForSeedSpeedUp };
+async function touchRound(roundId, res) {
+    const forestExplorationContract = await getForestExplorationContract();
+    const nonce = await getNonce();
+    publishSeed(forestExplorationContract, roundId, nonce);
+    res.status(200).json({});
+}
+
+const forestExploration = { checkForSeedSpeedUp, touchRound };
 
 export default forestExploration;

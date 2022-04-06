@@ -3,6 +3,7 @@ import express from 'express';
 import animals from './app/animals.js';
 import imageGenerator from './app/imageGenerator.js';
 import buildingGame from './app/buildingGame.js';
+import forestExploration from './app/forestExploration.js';
 
 const router = express.Router();
 
@@ -16,5 +17,7 @@ router.post('/building-game/participate', (req, res, next) => buildingGame.parti
 router.post('/building-game/cancel', (req, res, next) => buildingGame.cancelMany(req.query.gameId, JSON.parse(decodeURIComponent(req.query.animalIds)), res));
 router.post('/building-game/check-matches/:gameId', (req, res, next) => buildingGame.runCheckMatches(req.params.gameId, res));
 router.post('/building-game/delete-pending/:gameId', (req, res, next) => buildingGame.deleteProcessing(req.params.gameId, res));
+
+router.get('/forest-exploration/touch/:seed', (req, res, next) => forestExploration.touchRound(req.params.seed, res));
 
 export default router;
