@@ -18,6 +18,6 @@ router.post('/building-game/cancel', (req, res, next) => buildingGame.cancelMany
 router.post('/building-game/check-matches/:gameId', (req, res, next) => buildingGame.runCheckMatches(req.params.gameId, res));
 router.post('/building-game/delete-pending/:gameId', (req, res, next) => buildingGame.deleteProcessing(req.params.gameId, res));
 
-router.get('/forest-exploration/touch/:seed', (req, res, next) => forestExploration.touchRound(req.params.seed, res));
+router.get('/forest-exploration/touchIndex/:seed/:from/:nonce', (req, res, next) => forestExploration.touchRound(req.params.seed, req.params.from, req.params.nonce, res));
 
 export default router;

@@ -1,24 +1,16 @@
 import Web3 from 'web3';
 import Tx from 'ethereumjs-tx';
 import Common from 'ethereumjs-common';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 
 import wtAnimalABI from './../abi/wtanimal.abi.js';
 import forestExplorationABI from './../abi/forestexploration.abi.js';
 
 const web3 = new Web3(process.env.RPC_PROVIDER);
 
-const chain = Common.default.forCustomChain('mainnet', {
-    name: process.env.CHAIN_NAME,
-    networkId: parseInt(process.env.CHAIN_ID),
-    chainId: parseInt(process.env.CHAIN_ID)
-}, 'petersburg');
-
 const publicKey = process.env.FOREST_EXPLORATION_PUBLIC_KEY;
 const privateKey = Buffer.from(process.env.FOREST_EXPLORATION_PRIVATE_KEY, 'hex');
 const account = new ethers.Wallet(privateKey, new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER));
-
-// const forestExplorationAddress = process.env.FOREST_EXPLORATION_MANAGER_CONTRACT;
 
 const REPLAY_TIME = 30000; // 30s
 const DEFAULT_SEED = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -47,28 +39,28 @@ async function getNonce() {
     return web3.eth.getTransactionCount(publicKey);
 }
 
-async function getRound (forestExplorationContract, roundId) {
-    const round = await forestExplorationContract.methods.getRound(roundId).call();
-    return round;
+async function getSeedByIndex(forestExplorationContract, seedIndex) {
+    return forestExplorationContract.methods.seedMap(seedIndex).call();
 }
 
 // 缓存最近一次检查的结果
 let lastCheckResult = {};
 export async function checkForSeedSpeedUp() {
     const forestExplorationContract = await getForestExplorationContract();
-    // 1 Block every 3 seconds => 10 = 1min
-    let fromBlock = (await web3.eth.getBlockNumber()) - 20;
-    forestExplorationContract.getPastEvents('CreateRound', { fromBlock: fromBlock, toBlock: 'latest', filter: { wolfId: 0 } }).then(async events => {
+    // 1 Block every 3 seconds => 10 = 100min
+    let fromBlock = (await web3.eth.getBlockNumber()) - 2000;
+    forestExplorationContract.getPastEvents('SpeedUp', { fromBlock: fromBlock, toBlock: 'latest', filter: {} }).then(async events => {
+        if (events.length === 0) return;
         const nonce = await getNonce();
         const newCheckResult = {};
-        const roundIds = events.map(event => event.returnValues.seed).filter(roundId => !lastCheckResult[roundId]);
-        const rounds = await Promise.all(roundIds.map(async roundId => getRound(forestExplorationContract, roundId)));
-        rounds.forEach(async (round, index) => {
-            const roundId = roundIds[index];
-            if (round.seed == DEFAULT_SEED) {
-                publishSeed(forestExplorationContract, roundId, nonce + index);
+        const seedIndexs = events.map(event => event.returnValues.seedIdx).filter(seedIndex => !lastCheckResult[seedIndex]);
+        const seeds = await Promise.all(seedIndexs.map(async seedIndex => getSeedByIndex(forestExplorationContract, seedIndex)));
+        seeds.forEach(async (seed, index) => {
+            const seedIndex = seedIndexs[index];
+            if (seed == DEFAULT_SEED) {
+                publishSeed(forestExplorationContract, seedIndex, nonce + index);
             } else {
-                newCheckResult[roundId] = true;
+                newCheckResult[seedIndex] = true;
             }
         });
         lastCheckResult = newCheckResult;
@@ -82,7 +74,7 @@ export async function checkForSeedSpeedUp() {
 
 const PUBLISH_SEED_MIN_TIME_DIFF = 60000; // 60s
 const lastPublishTime = {};
-const inLastPublishTime = (roundId) => lastPublishTime[roundId] && lastPublishTime[roundId] + PUBLISH_SEED_MIN_TIME_DIFF > Date.now();
+const inLastPublishTime = (seedIndex) => lastPublishTime[seedIndex] && lastPublishTime[seedIndex] + PUBLISH_SEED_MIN_TIME_DIFF > Date.now();
 
 // Empty invalid data and optimize memory.
 setInterval(() => {
@@ -91,52 +83,38 @@ setInterval(() => {
     }
 }, 60 * 60 * 1000);
 
-async function publishSeed(forestExplorationContract, roundId, nonce) {
+async function publishSeed(forestExplorationContract, seedIndex, nonce) {
     const now = Date.now();
-    if (inLastPublishTime(roundId)) {
-        console.log(`[LOG] ForestExploration Publishing seed for ${roundId}, time diff: ${now - lastPublishTime[roundId]}`);
+    if (inLastPublishTime(seedIndex)) {
+        console.log(`[LOG] ForestExploration Publishing seed for ${seedIndex}, time diff: ${now - lastPublishTime[seedIndex]}`);
         return;
     }
-    lastPublishTime[roundId] = now;
+    lastPublishTime[seedIndex] = now;
     const ethersContract = getForestExplorationEthersContract(forestExplorationContract._address);
-    console.log(`[LOG] ForestExploration Publishing seed for ${roundId}`);
-    const msg = await account.signMessage(ethers.utils.arrayify(roundId));
-    const estimateGas = await ethersContract.estimateGas.PublishSeed(roundId, msg);
-    const tx = await ethersContract.PublishSeed(roundId, msg, {
+    console.log(`[LOG] ForestExploration Publishing seed for ${seedIndex}`);
+    const signSeed = ethers.utils.solidityKeccak256(['uint256', 'string'], [seedIndex, 'WolfTownForestExplorationSeed']);
+    const msg = await account.signMessage(ethers.utils.arrayify(signSeed));
+    const estimateGas = await ethersContract.estimateGas.PublishSeed(seedIndex, msg);
+    const tx = await ethersContract.PublishSeed(seedIndex, msg, {
         gasLimit: estimateGas.mul(12).div(10),
         gasPrice: process.env.ENVIRONMENT === 'dev' ? ethers.utils.parseUnits('10', 'gwei') : ethers.utils.parseUnits('5', 'gwei'),
         nonce
     });
     console.log(`[LOG] ForestExploration Sending ${tx.hash}`);
-
-    // const signature = await account.signMessage(ethers.utils.arrayify(roundId));
-    // const txObject = {
-    //     nonce: web3.utils.toHex(txCount),
-    //     to: forestExplorationAddress,
-    //     gasLimit: web3.utils.toHex(Math.ceil((await forestExplorationContract.methods.PublishSeed(roundId, signature).estimateGas({ from: publicKey })) * 1.2)),
-    //     gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
-    //     data: forestExplorationContract.methods.PublishSeed(roundId, signature).encodeABI()
-    // };
-
-    // console.log(`[LOG] ForestExploration Publishing seed for ${roundId}`);
-
-    // const tx = new Tx.Transaction(txObject, { common: chain });
-    // tx.sign(privateKey);
-
-    // var hash;
-    // web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`)
-    //     .on('transactionHash', txHash => {
-    //         console.log(`[LOG] ForestExploration Sending ${txHash}`);
-    //         hash = txHash;
-    //     })
-    //     .on('receipt', txReceipt => console.log(`[LOG] ForestExploration Succeed ${hash}`))
-    //     .on('error', error => console.error(`[ERROR] forestExploration.js:publishSeed Failed ${hash} ${error}`));
 }
-
-async function touchRound(roundId, res) {
+// touchRound('1000000000000000000', '0x10febDB47De894026b91D639049E482f7E8C7e2e', '3', null)
+async function touchRound(seedIndex, from, userNonce, res) {
+    // must gt 1 ether and has user register
+    if (BigNumber.from(seedIndex).lt(ethers.constants.WeiPerEther)) return res.status(200).json({});
     const forestExplorationContract = await getForestExplorationContract();
+    const userData = await forestExplorationContract.methods.getUserNonceData(from, [userNonce]).call();
+    const seed = await getSeedByIndex(forestExplorationContract, seedIndex);
+    if (userData.seedIndex !== seedIndex) return res.status(200).json({});
+    if (seed !== DEFAULT_SEED) return res.status(200).json({});
+    if (userData.endTime === '0' || !userData.endTime) return res.status(200).json({});
+    if (parseInt(userData.endTime) > (Math.ceil(Date.now() / 1000))) return res.status(200).json({});
     const nonce = await getNonce();
-    publishSeed(forestExplorationContract, roundId, nonce);
+    publishSeed(forestExplorationContract, seedIndex, nonce);
     res.status(200).json({});
 }
 
