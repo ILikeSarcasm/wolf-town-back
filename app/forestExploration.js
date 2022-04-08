@@ -51,14 +51,14 @@ export async function checkForSeedSpeedUp() {
     let fromBlock = (await web3.eth.getBlockNumber()) - 2000;
     forestExplorationContract.getPastEvents('SpeedUp', { fromBlock: fromBlock, toBlock: 'latest', filter: {} }).then(async events => {
         if (events.length === 0) return;
-        const nonce = await getNonce();
+        let nonce = await getNonce();
         const newCheckResult = {};
         const seedIndexs = events.map(event => event.returnValues.seedIdx).filter(seedIndex => !lastCheckResult[seedIndex]);
         const seeds = await Promise.all(seedIndexs.map(async seedIndex => getSeedByIndex(forestExplorationContract, seedIndex)));
         seeds.forEach(async (seed, index) => {
             const seedIndex = seedIndexs[index];
             if (seed == DEFAULT_SEED) {
-                publishSeed(forestExplorationContract, seedIndex, nonce + index);
+                publishSeed(forestExplorationContract, seedIndex, nonce++);
             } else {
                 newCheckResult[seedIndex] = true;
             }
