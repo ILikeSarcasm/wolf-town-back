@@ -205,19 +205,24 @@ function checkData(gameId, participations) {
 export function checkMatches(gameId) {
     return new Promise((resolve, reject) => {
         var sql = "SELECT `user`, `animalId`, `action`, `hashedAction` " +
-                  "FROM ( " +
-                      "SELECT bg.`user`, bg.`animalId`, bg.`action`, bg.`hashedAction` " +
-                      "FROM `building-game` bg " +
-                        	"JOIN (" +
-                        		"SELECT `user`, GROUP_CONCAT(`animalId`) AS `animalIds` " +
-                        		"FROM `building-game` " +
-                        		"WHERE `buildingId` = ? AND `state` = 'WAITING' " +
-                        		"GROUP BY `user` " +
-                        	") t ON bg.`user` = t.`user` AND FIND_IN_SET(bg.`animalId`, t.`animalIds`) BETWEEN 1 AND " + MIN_PARTICIPATION / 2 + " " +
-                      "ORDER BY bg.`timestamp` " +
-                      "LIMIT " + MIN_PARTICIPATION +
-                    ") t " +
-                    "ORDER BY RAND();";
+                  "FROM `building-game` " +
+                  "WHERE `buildingId` = ? AND `state` = 'WAITING' " +
+                  "ORDER BY RAND() " +
+                  "LIMIT " + MIN_PARTICIPATION + ";";
+        // var sql = "SELECT `user`, `animalId`, `action`, `hashedAction` " +
+        //           "FROM ( " +
+        //               "SELECT bg.`user`, bg.`animalId`, bg.`action`, bg.`hashedAction` " +
+        //               "FROM `building-game` bg " +
+        //                 	"JOIN (" +
+        //                 		"SELECT `user`, GROUP_CONCAT(`animalId`) AS `animalIds` " +
+        //                 		"FROM `building-game` " +
+        //                 		"WHERE `buildingId` = ? AND `state` = 'WAITING' " +
+        //                 		"GROUP BY `user` " +
+        //                 	") t ON bg.`user` = t.`user` AND FIND_IN_SET(bg.`animalId`, t.`animalIds`) BETWEEN 1 AND " + MIN_PARTICIPATION + " " +
+        //               "ORDER BY bg.`timestamp` " +
+        //               "LIMIT " + MIN_PARTICIPATION +
+        //             ") t " +
+        //             "ORDER BY RAND();";
         var params = [ gameId ];
 
         db.query(sql, params).then(participations => {
