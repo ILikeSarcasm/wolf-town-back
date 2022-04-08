@@ -118,6 +118,31 @@ async function touchRound(seedIndex, from, userNonce, res) {
     res.status(200).json({});
 }
 
+const BeginTime = new Date('2022-04-09').getTime();
+async function publishSeedEveryDay() {
+    const forestExplorationContract = await getForestExplorationContract();
+    const contract = getForestExplorationEthersContract(forestExplorationContract._address);
+    const now = Date.now();
+    const currentIndex = Math.floor((now - BeginTime) / 1000 / 60 / 60 / 23); // 23 hours per round
+    const currentJoinSeedIdx = await contract.currentJoinSeedIdx();
+    if (currentJoinSeedIdx.gte(currentIndex)) return replayAfter(10*60*1000, publishSeedEveryDay);
+    await contract.set_currentJoinSeedIdx(currentIndex);
+    // must success
+    while(true) {
+        try {
+            const nonce = await getNonce();
+            try {
+                await publishSeed(forestExplorationContract, currentJoinSeedIdx, nonce);
+            } finally {
+                const seed = await contract.seedMap(currentJoinSeedIdx);
+                if (seed !== DEFAULT_SEED) return replayAfter(10 * 60 * 1000, publishSeedEveryDay);
+            }
+        } catch(error) {
+            console.log(`[ERROR] ForestExploration publishSeedEveryDay ${currentJoinSeedIdx}`);
+        }
+    }
+}
+publishSeedEveryDay();
 const forestExploration = { checkForSeedSpeedUp, touchRound };
 
 export default forestExploration;
