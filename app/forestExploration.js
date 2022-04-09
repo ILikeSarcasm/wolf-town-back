@@ -92,7 +92,7 @@ async function publishSeed(forestExplorationContract, seedIndex, nonce) {
     lastPublishTime[seedIndex] = now;
     const ethersContract = getForestExplorationEthersContract(forestExplorationContract._address);
     console.log(`[LOG] ForestExploration Publishing seed for ${seedIndex}`);
-    const signSeed = ethers.utils.solidityKeccak256(['uint256', 'string', 'address'], [seedIndex, 'WolfTownForestExplorationSeed', account.address]);
+    const signSeed = ethers.utils.solidityKeccak256(['uint256', 'string', 'address'], [seedIndex, 'WolfTownForestExplorationSeed', forestExplorationContract._address]);
     const msg = await account.signMessage(ethers.utils.arrayify(signSeed));
     const estimateGas = await ethersContract.estimateGas.PublishSeed(seedIndex, msg);
     const tx = await ethersContract.PublishSeed(seedIndex, msg, {
