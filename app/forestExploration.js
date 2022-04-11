@@ -107,12 +107,12 @@ async function touchRound(seedIndex, from, userNonce, res) {
     // must gt 1 ether and has user register
     if (BigNumber.from(seedIndex).lt(ethers.constants.WeiPerEther)) return res.status(200).json({});
     const forestExplorationContract = await getForestExplorationContract();
-    const userData = await forestExplorationContract.methods.getUserNonceData(from, [userNonce]).call();
+    const [userData] = await forestExplorationContract.methods.getUserNonceData(from, [userNonce]).call();
     const seed = await getSeedByIndex(forestExplorationContract, seedIndex);
-    if (userData.seedIndex !== seedIndex) return res.status(200).json({});
-    if (seed !== DEFAULT_SEED) return res.status(200).json({});
-    if (userData.endTime === '0' || !userData.endTime) return res.status(200).json({});
-    if (parseInt(userData.endTime) > (Math.ceil(Date.now() / 1000))) return res.status(200).json({});
+    if (userData.seedIndex !== seedIndex) return res.status(200).json({ err: 'seedIndex error' });
+    if (seed !== DEFAULT_SEED) return res.status(200).json({err: 'is opened'});
+    if (userData.endTime === '0' || !userData.endTime) return res.status(200).json({ err: 'not end' });
+    if (parseInt(userData.endTime) > (Math.ceil(Date.now() / 1000))) return res.status(200).json({ err: 'not end.' });
     const nonce = await getNonce();
     publishSeed(forestExplorationContract, seedIndex, nonce);
     res.status(200).json({});
