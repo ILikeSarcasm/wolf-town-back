@@ -128,7 +128,7 @@ async function publishSeedEveryDay() {
     if (currentJoinSeedIdx.gte(currentIndex)) return replayAfter(10*60*1000, publishSeedEveryDay);
     await contract.set_currentJoinSeedIdx(currentIndex);
     // must success
-    while(true) {
+    // while(true) {
         try {
             const nonce = await getNonce();
             try {
@@ -140,7 +140,7 @@ async function publishSeedEveryDay() {
         } catch(error) {
             console.log(`[ERROR] ForestExploration publishSeedEveryDay ${currentJoinSeedIdx}`);
         }
-    }
+    // }
 }
 publishSeedEveryDay();
 const forestExploration = { checkForSeedSpeedUp, touchRound };
