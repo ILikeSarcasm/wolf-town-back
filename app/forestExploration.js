@@ -94,14 +94,38 @@ async function publishSeed(forestExplorationContract, seedIndex, nonce) {
     console.log(`[LOG] ForestExploration Publishing seed for ${seedIndex}`);
     const signSeed = ethers.utils.solidityKeccak256(['uint256', 'string', 'address'], [seedIndex, 'WolfTownForestExplorationSeed', forestExplorationContract._address]);
     const msg = await account.signMessage(ethers.utils.arrayify(signSeed));
-    const estimateGas = await ethersContract.estimateGas.PublishSeed(seedIndex, msg);
-    const tx = await ethersContract.PublishSeed(seedIndex, msg, {
-        gasLimit: estimateGas.mul(12).div(10),
-        gasPrice: process.env.ENVIRONMENT === 'dev' ? ethers.utils.parseUnits('10', 'gwei') : ethers.utils.parseUnits('5', 'gwei'),
-        nonce
+    return submitTxByAccount(publicKey, async () => {
+        const estimateGas = await ethersContract.estimateGas.PublishSeed(seedIndex, msg);
+        const tx = await ethersContract.PublishSeed(seedIndex, msg, {
+            gasLimit: estimateGas.mul(12).div(10),
+            gasPrice: process.env.ENVIRONMENT === 'dev' ? ethers.utils.parseUnits('10', 'gwei') : ethers.utils.parseUnits('5', 'gwei'),
+        });
+        console.log(`[LOG] ForestExploration Sending ${tx.hash}`);
     });
-    console.log(`[LOG] ForestExploration Sending ${tx.hash}`);
 }
+
+// Make an account always have only one transaction being submitted
+const txQueue = {};
+async function submitTxByAccount(address, callback) {
+    const queue = txQueue[address] = txQueue[address] || [];
+    const wait = Promise.all([...queue]);
+    const next = new Promise(async resolve => {
+        try {
+            await wait;
+        } finally {
+            try {
+                await callback();
+            } finally {
+                queue.splice(queue.indexOf(next), 1);
+                resolve(null);
+            }
+        }
+    });
+    queue.push(next);
+    return next;
+}
+
+
 // touchRound('1000000000000000000', '0x10febDB47De894026b91D639049E482f7E8C7e2e', '3', null)
 async function touchRound(seedIndex, from, userNonce, res) {
     // must gt 1 ether and has user register
