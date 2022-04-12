@@ -7,7 +7,6 @@ import wtAnimalABI from './../abi/wtanimal.abi.js';
 import forestExplorationABI from './../abi/forestexploration.abi.js';
 
 const web3 = new Web3(process.env.RPC_PROVIDER);
-
 const publicKey = process.env.FOREST_EXPLORATION_PUBLIC_KEY;
 const privateKey = Buffer.from(process.env.FOREST_EXPLORATION_PRIVATE_KEY, 'hex');
 const account = new ethers.Wallet(privateKey, new ethers.providers.JsonRpcProvider(process.env.RPC_PROVIDER));
@@ -35,10 +34,6 @@ function getForestExplorationEthersContract(address) {
     return new ethers.Contract(address, forestExplorationABI, account);
 }
 
-async function getNonce() {
-    return web3.eth.getTransactionCount(publicKey);
-}
-
 async function getSeedByIndex(forestExplorationContract, seedIndex) {
     return forestExplorationContract.methods.seedMap(seedIndex).call();
 }
@@ -51,14 +46,13 @@ export async function checkForSeedSpeedUp() {
     let fromBlock = (await web3.eth.getBlockNumber()) - 2000;
     forestExplorationContract.getPastEvents('SpeedUp', { fromBlock: fromBlock, toBlock: 'latest', filter: {} }).then(async events => {
         if (events.length === 0) return;
-        let nonce = await getNonce();
         const newCheckResult = {};
         const seedIndexs = events.map(event => event.returnValues.seedIdx).filter(seedIndex => !lastCheckResult[seedIndex]);
         const seeds = await Promise.all(seedIndexs.map(async seedIndex => getSeedByIndex(forestExplorationContract, seedIndex)));
         seeds.forEach(async (seed, index) => {
             const seedIndex = seedIndexs[index];
             if (seed == DEFAULT_SEED) {
-                publishSeed(forestExplorationContract, seedIndex, nonce++);
+                publishSeed(forestExplorationContract, seedIndex);
             } else {
                 newCheckResult[seedIndex] = true;
             }
@@ -71,7 +65,6 @@ export async function checkForSeedSpeedUp() {
     });
 }
 
-
 const PUBLISH_SEED_MIN_TIME_DIFF = 60000; // 60s
 const lastPublishTime = {};
 const inLastPublishTime = (seedIndex) => lastPublishTime[seedIndex] && lastPublishTime[seedIndex] + PUBLISH_SEED_MIN_TIME_DIFF > Date.now();
@@ -83,7 +76,7 @@ setInterval(() => {
     }
 }, 60 * 60 * 1000);
 
-async function publishSeed(forestExplorationContract, seedIndex, nonce) {
+async function publishSeed(forestExplorationContract, seedIndex) {
     const now = Date.now();
     if (inLastPublishTime(seedIndex)) {
         console.log(`[LOG] ForestExploration Publishing seed for ${seedIndex}, time diff: ${now - lastPublishTime[seedIndex]}`);
@@ -137,34 +130,31 @@ async function touchRound(seedIndex, from, userNonce, res) {
     if (seed !== DEFAULT_SEED) return res.status(200).json({err: 'is opened'});
     if (userData.endTime === '0' || !userData.endTime) return res.status(200).json({ err: 'not end' });
     if (parseInt(userData.endTime) > (Math.ceil(Date.now() / 1000))) return res.status(200).json({ err: 'not end.' });
-    const nonce = await getNonce();
-    publishSeed(forestExplorationContract, seedIndex, nonce);
+    publishSeed(forestExplorationContract, seedIndex);
     res.status(200).json({});
 }
 
 const BeginTime = new Date('2022-04-09').getTime();
 async function publishSeedEveryDay() {
-    const forestExplorationContract = await getForestExplorationContract();
-    const contract = getForestExplorationEthersContract(forestExplorationContract._address);
-    const now = Date.now();
-    const currentIndex = Math.floor((now - BeginTime) / 1000 / 60 / 60 / 23); // 23 hours per round
-    const currentJoinSeedIdx = await contract.currentJoinSeedIdx();
-    if (currentJoinSeedIdx.gte(currentIndex)) return replayAfter(10*60*1000, publishSeedEveryDay);
-    await contract.set_currentJoinSeedIdx(currentIndex);
-    // must success
-    // while(true) {
-        try {
-            const nonce = await getNonce();
-            try {
-                await publishSeed(forestExplorationContract, currentJoinSeedIdx, nonce);
-            } finally {
-                const seed = await contract.seedMap(currentJoinSeedIdx);
-                if (seed !== DEFAULT_SEED) return replayAfter(10 * 60 * 1000, publishSeedEveryDay);
-            }
-        } catch(error) {
-            console.log(`[ERROR] ForestExploration publishSeedEveryDay ${currentJoinSeedIdx}`);
-        }
-    // }
+    const doing = async () => {
+        const forestExplorationContract = await getForestExplorationContract();
+        const contract = getForestExplorationEthersContract(forestExplorationContract._address);
+        const now = Date.now();
+        const currentIndex = Math.floor((now - BeginTime) / 1000 / 60 / 60 / 23); // 23 hours per round
+        const currentJoinSeedIdx = await contract.currentJoinSeedIdx();
+        if (currentJoinSeedIdx.gte(currentIndex)) return;
+        await contract.set_currentJoinSeedIdx(currentIndex);
+        const seed = await contract.seedMap(currentJoinSeedIdx);
+        if (seed === DEFAULT_SEED) return;
+        await publishSeed(forestExplorationContract, currentJoinSeedIdx);
+    }
+    try {
+        await doing();
+    } catch(error) {
+        console.error(`[ERROR] ForestExploration publishSeedEveryDay`, error);
+    } finally {
+        replayAfter(10 * 60 * 1000, publishSeedEveryDay)
+    }
 }
 publishSeedEveryDay();
 const forestExploration = { checkForSeedSpeedUp, touchRound };
