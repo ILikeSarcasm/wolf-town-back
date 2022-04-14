@@ -11,7 +11,6 @@ module.exports = {
     exec_mode: 'cluster',
     instances: 1,
     max_memory_restart: '1024M',
-    // ignore_watch: ['node_modules', 'logs', '.git', '.svn', '.eslintrc'],
-    // watch: [],
+    cron_restart: '*/30 * * * *',
   }],
 };
