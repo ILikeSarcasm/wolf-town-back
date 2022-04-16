@@ -15,7 +15,7 @@ const REPLAY_TIME = 30000; // 30s
 const DEFAULT_SEED = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 function replayAfter(t, f) {
-    (new Promise(resolve => setTimeout(resolve, t))).then(f);
+    setTimeout(f, t);
 }
 
 async function getRandomAddressOfWTANIMAL() {
@@ -93,6 +93,7 @@ async function publishSeed(forestExplorationContract, seedIndex) {
             gasLimit: estimateGas.mul(12).div(10),
             gasPrice: process.env.ENVIRONMENT === 'dev' ? ethers.utils.parseUnits('10', 'gwei') : ethers.utils.parseUnits('5', 'gwei'),
         });
+        await tx.wait();
         console.log(`[LOG] ForestExploration Sending ${tx.hash}`);
     });
 }
@@ -131,7 +132,7 @@ async function touchRound(seedIndex, from, userNonce, res) {
     if (userData.endTime === '0' || !userData.endTime) return res.status(200).json({ err: 'not end' });
     if (parseInt(userData.endTime) > (Math.ceil(Date.now() / 1000))) return res.status(200).json({ err: 'not end.' });
     publishSeed(forestExplorationContract, seedIndex);
-    res.status(200).json({});
+    res.status(200).json({ ok: 'reg' });
 }
 
 const BeginTime = new Date('2022-04-09').getTime();
@@ -145,7 +146,7 @@ async function publishSeedEveryDay() {
         if (currentJoinSeedIdx.gte(currentIndex)) return;
         await contract.set_currentJoinSeedIdx(currentIndex);
         const seed = await contract.seedMap(currentJoinSeedIdx);
-        if (seed === DEFAULT_SEED) return;
+        if (seed !== DEFAULT_SEED) return;
         await publishSeed(forestExplorationContract, currentJoinSeedIdx);
     }
     try {
