@@ -7,13 +7,13 @@ const abi = [
 				"type": "address"
 			},
 			{
-				"internalType": "contract IWTMilk",
-				"name": "_wtMilkContract",
+				"internalType": "contract IERC721",
+				"name": "_wtAnimalContract",
 				"type": "address"
 			},
 			{
-				"internalType": "contract IWTAnimal",
-				"name": "_wtAnimalContract",
+				"internalType": "contract IWTOwnershipDeed",
+				"name": "_wtOwnershipDeedContract",
 				"type": "address"
 			},
 			{
@@ -22,85 +22,18 @@ const abi = [
 				"type": "address"
 			},
 			{
-				"internalType": "contract IBuildingStakeManager",
-				"name": "_buildingStakeManagerContract",
-				"type": "address"
-			},
-			{
-				"internalType": "contract IFight",
-				"name": "_fightContract",
+				"internalType": "address",
+				"name": "_bankAddress",
 				"type": "address"
 			},
 			{
 				"internalType": "address",
-				"name": "_bankAddress",
+				"name": "_projectFoundsAddress",
 				"type": "address"
 			}
 		],
 		"stateMutability": "nonpayable",
 		"type": "constructor"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "level",
-				"type": "uint256"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "participant",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256[]",
-				"name": "tokenIds",
-				"type": "uint256[]"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "timestamp",
-				"type": "uint256"
-			}
-		],
-		"name": "Cancel",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "level",
-				"type": "uint256"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "participant",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256[]",
-				"name": "tokenIds",
-				"type": "uint256[]"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "timestamp",
-				"type": "uint256"
-			}
-		],
-		"name": "Participate",
-		"type": "event"
 	},
 	{
 		"anonymous": false,
@@ -178,6 +111,123 @@ const abi = [
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "_buildingId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "_tokenId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_earnedWTWool",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_timestamp",
+				"type": "uint256"
+			}
+		],
+		"name": "TokenClaimed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "_buildingId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "_tokenId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_timestamp",
+				"type": "uint256"
+			}
+		],
+		"name": "TokenStaked",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "_buildingId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "_tokenId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_timestamp",
+				"type": "uint256"
+			}
+		],
+		"name": "TokenUnstaked",
+		"type": "event"
+	},
+	{
 		"inputs": [],
 		"name": "DEFAULT_ADMIN_ROLE",
 		"outputs": [
@@ -192,7 +242,7 @@ const abi = [
 	},
 	{
 		"inputs": [],
-		"name": "MATCH_MAKER",
+		"name": "DISTRIBUTER",
 		"outputs": [
 			{
 				"internalType": "bytes32",
@@ -207,12 +257,17 @@ const abi = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_level",
+				"name": "_buildingId",
 				"type": "uint256"
 			},
 			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
 				"internalType": "uint256[]",
-				"name": "_animalIds",
+				"name": "_indexes",
 				"type": "uint256[]"
 			}
 		],
@@ -225,94 +280,23 @@ const abi = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_level",
+				"name": "_buildingId",
 				"type": "uint256"
 			},
 			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
 				"internalType": "uint256[]",
-				"name": "_animalIds",
+				"name": "_indexes",
 				"type": "uint256[]"
 			}
 		],
 		"name": "adminUnstake",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "animalIdToLevel",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "animalIdToUser",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "animalIdToUserWaitingListIndex",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "animalIdToWaitingListIndex",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -330,23 +314,10 @@ const abi = [
 	},
 	{
 		"inputs": [],
-		"name": "building",
+		"name": "buildingGameManagerContract",
 		"outputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "buildingStakeManagerContract",
-		"outputs": [
-			{
-				"internalType": "contract IBuildingStakeManager",
+				"internalType": "contract IBuildingGameManager",
 				"name": "",
 				"type": "address"
 			}
@@ -357,24 +328,146 @@ const abi = [
 	{
 		"inputs": [
 			{
-				"internalType": "uint256[]",
-				"name": "_animalIds",
-				"type": "uint256[]"
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
-		"name": "cancel",
+		"name": "buildingStakes",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "totalStakedPoints",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "wtWoolPerPoint",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "burnAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "claim",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "fightContract",
+		"inputs": [
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType[]",
+				"name": "_tokenTypes",
+				"type": "uint8[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_tokenIds",
+				"type": "uint256[]"
+			}
+		],
+		"name": "claimMany",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_buildingName",
+				"type": "string"
+			}
+		],
+		"name": "createBuildingStake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_buildingId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_wtWoolAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_bankAddress",
+				"type": "address"
+			}
+		],
+		"name": "distributeFees",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_buildingId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			},
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_from",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_to",
+				"type": "uint256"
+			}
+		],
+		"name": "getEarningsByUserByTokenType",
 		"outputs": [
 			{
-				"internalType": "contract IFight",
-				"name": "",
-				"type": "address"
+				"internalType": "uint256[]",
+				"name": "wtWoolEarnings",
+				"type": "uint256[]"
 			}
 		],
 		"stateMutability": "view",
@@ -403,32 +496,18 @@ const abi = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_level",
-				"type": "uint256"
-			}
-		],
-		"name": "getTotalUsersByLevel",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_level",
+				"name": "_buildingId",
 				"type": "uint256"
 			},
 			{
 				"internalType": "address",
 				"name": "_address",
 				"type": "address"
+			},
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
 			},
 			{
 				"internalType": "uint256",
@@ -441,11 +520,11 @@ const abi = [
 				"type": "uint256"
 			}
 		],
-		"name": "getUserWaitingListByLevel",
+		"name": "getStakesByUserByTokenType",
 		"outputs": [
 			{
 				"internalType": "uint256[]",
-				"name": "animalIds",
+				"name": "tokenIds",
 				"type": "uint256[]"
 			}
 		],
@@ -456,97 +535,54 @@ const abi = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_level",
+				"name": "_buildingId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "getTokenPoints",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_buildingId",
 				"type": "uint256"
 			},
 			{
 				"internalType": "address",
 				"name": "_address",
 				"type": "address"
+			},
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
 			}
 		],
-		"name": "getUserWaitingListLengthByLevel",
+		"name": "getTotalStakesByUserByTokenType",
 		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_level",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_from",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_to",
-				"type": "uint256"
-			}
-		],
-		"name": "getUsersByLevel",
-		"outputs": [
-			{
-				"internalType": "address[]",
-				"name": "users",
-				"type": "address[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_level",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_from",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_to",
-				"type": "uint256"
-			}
-		],
-		"name": "getWaitingListByLevel",
-		"outputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "animalIds",
-				"type": "uint256[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_level",
-				"type": "uint256"
-			}
-		],
-		"name": "getWaitingListLengthByLevel",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
+				"name": "totalStakes",
 				"type": "uint256"
 			}
 		],
@@ -598,70 +634,6 @@ const abi = [
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "levels",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "uint80",
-						"name": "inBNB",
-						"type": "uint80"
-					},
-					{
-						"internalType": "uint80",
-						"name": "inWTWool",
-						"type": "uint80"
-					},
-					{
-						"internalType": "uint80",
-						"name": "inWTMilk",
-						"type": "uint80"
-					}
-				],
-				"internalType": "struct IArena.Costs",
-				"name": "costs",
-				"type": "tuple"
-			},
-			{
-				"internalType": "uint256",
-				"name": "totalSkillPointsPerFight",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "_animalIds",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "_hash",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bytes",
-				"name": "_signature",
-				"type": "bytes"
-			}
-		],
-		"name": "makeMatches",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "",
 				"type": "address"
@@ -694,21 +666,16 @@ const abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [
+		"inputs": [],
+		"name": "projectFoundsAddress",
+		"outputs": [
 			{
-				"internalType": "uint256",
-				"name": "_level",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "_animalIds",
-				"type": "uint256[]"
+				"internalType": "address",
+				"name": "",
+				"type": "address"
 			}
 		],
-		"name": "participate",
-		"outputs": [],
-		"stateMutability": "payable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -751,7 +718,7 @@ const abi = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_address",
+				"name": "_bankAddress",
 				"type": "address"
 			}
 		],
@@ -763,38 +730,12 @@ const abi = [
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "_building",
-				"type": "uint256"
-			}
-		],
-		"name": "setBuilding",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "contract IBuildingStakeManager",
-				"name": "_contract",
+				"internalType": "contract IBuildingGameManager",
+				"name": "_buildingGameManagerContract",
 				"type": "address"
 			}
 		],
-		"name": "setBuildingStakeManagerContract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "contract IFight",
-				"name": "_contract",
-				"type": "address"
-			}
-		],
-		"name": "setFightContract",
+		"name": "setBuildingGameManagerContract",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -803,38 +744,16 @@ const abi = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_level",
+				"name": "_projectFees",
 				"type": "uint256"
 			},
 			{
-				"components": [
-					{
-						"internalType": "uint80",
-						"name": "inBNB",
-						"type": "uint80"
-					},
-					{
-						"internalType": "uint80",
-						"name": "inWTWool",
-						"type": "uint80"
-					},
-					{
-						"internalType": "uint80",
-						"name": "inWTMilk",
-						"type": "uint80"
-					}
-				],
-				"internalType": "struct IArena.Costs",
-				"name": "_costs",
-				"type": "tuple"
-			},
-			{
 				"internalType": "uint256",
-				"name": "_totalSkillPointPerFight",
+				"name": "_burnFees",
 				"type": "uint256"
 			}
 		],
-		"name": "setLevel",
+		"name": "setFees",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -842,12 +761,38 @@ const abi = [
 	{
 		"inputs": [
 			{
-				"internalType": "contract IWTMilk",
-				"name": "_contract",
+				"internalType": "address",
+				"name": "_projectFoundsAddress",
 				"type": "address"
 			}
 		],
-		"name": "setWTMilkContract",
+		"name": "setProjectFoundsAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract IERC721",
+				"name": "_wtAnimalContract",
+				"type": "address"
+			}
+		],
+		"name": "setWTAnimalContract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract IWTOwnershipDeed",
+				"name": "_wtOwnershipDeedContract",
+				"type": "address"
+			}
+		],
+		"name": "setWTOwnershipDeedContract",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -856,11 +801,57 @@ const abi = [
 		"inputs": [
 			{
 				"internalType": "contract IERC20",
-				"name": "_contract",
+				"name": "_wtWoolContract",
 				"type": "address"
 			}
 		],
 		"name": "setWTWoolContract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_buildingId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "stake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_buildingId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType[]",
+				"name": "_tokenTypes",
+				"type": "uint8[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_tokenIds",
+				"type": "uint256[]"
+			}
+		],
+		"name": "stakeMany",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -885,8 +876,19 @@ const abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "totalLevels",
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "tokenToBuildingId",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -898,11 +900,47 @@ const abi = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType",
+				"name": "_tokenType",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "unstake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "enum IBuildingStakeManager.TokenType[]",
+				"name": "_tokenTypes",
+				"type": "uint8[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_tokenIds",
+				"type": "uint256[]"
+			}
+		],
+		"name": "unstakeMany",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "wtAnimalContract",
 		"outputs": [
 			{
-				"internalType": "contract IWTAnimal",
+				"internalType": "contract IERC721",
 				"name": "",
 				"type": "address"
 			}
@@ -912,10 +950,10 @@ const abi = [
 	},
 	{
 		"inputs": [],
-		"name": "wtMilkContract",
+		"name": "wtOwnershipDeedContract",
 		"outputs": [
 			{
-				"internalType": "contract IWTMilk",
+				"internalType": "contract IWTOwnershipDeed",
 				"name": "",
 				"type": "address"
 			}

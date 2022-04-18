@@ -349,6 +349,29 @@ const abi = [
 				"internalType": "uint256",
 				"name": "_gameId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_from",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_to",
+				"type": "uint256"
+			}
+		],
+		"name": "emergencyUnstake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_gameId",
+				"type": "uint256"
 			}
 		],
 		"name": "endGame",
@@ -535,6 +558,52 @@ const abi = [
 				"internalType": "struct IBuildingGameManager.AnimalData",
 				"name": "",
 				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_gameId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_animalIds",
+				"type": "uint256[]"
+			}
+		],
+		"name": "getGameAnimalDatas",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "waitingListIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "userWaitingListIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "points",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lastPlay",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct IBuildingGameManager.AnimalData[]",
+				"name": "",
+				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
