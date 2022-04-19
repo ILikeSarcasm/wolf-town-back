@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `tournament` (
 -- Listage des données de la table wolf-town.tournament : ~0 rows (environ)
 /*!40000 ALTER TABLE `tournament` DISABLE KEYS */;
 INSERT INTO `tournament` (`participants`) VALUES
-	(4);
+	(8);
 /*!40000 ALTER TABLE `tournament` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

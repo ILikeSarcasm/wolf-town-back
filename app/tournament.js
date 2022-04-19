@@ -33,7 +33,7 @@ function random(max, min = 0) {
 
 function setNewTournamentSize() {
     new Promise((resolve, reject) => {
-        let participantNumber = random(6, 3);
+        let participantNumber = Math.pow(2, random(6, 3));
         var sql = "UPDATE `tournament` " +
                   "SET `participants` = " + participantNumber + ";";
 
