@@ -5,6 +5,7 @@ import imageGenerator from './app/imageGenerator.js';
 import buildingGame from './app/buildingGame.js';
 import forestExploration from './app/forestExploration.js';
 import arena from './app/arena.js';
+import tournament from './app/tournament.js';
 
 const router = express.Router();
 
@@ -21,6 +22,8 @@ router.post('/building-game/delete-pending/:gameId', (req, res, next) => buildin
 
 router.get('/forest-exploration/touchIndex/:seed/:from/:nonce', (req, res, next) => forestExploration.touchRound(req.params.seed, req.params.from, req.params.nonce, res));
 
-router.post('/arena/check-matches/:level', (req, res, next) => arena.checkMatches(req.params.level, res));
+router.post('/arena/check-matches/:level', (req, res, next) => arena.initCheckMatches(req.params.level, res));
+
+router.post('/tournament/check-matches/:level', (req, res, next) => tournament.initCheckMatches(req.params.level, res));
 
 export default router;

@@ -35,7 +35,7 @@ function setNewTournamentSize() {
     new Promise((resolve, reject) => {
         let participantNumber = random(6, 3);
         var sql = "UPDATE `tournament` " +
-                  "SET `participants` = " + participantNumber ";";
+                  "SET `participants` = " + participantNumber + ";";
 
         db.query(sql).then(() => resolve(participantNumber)).catch(error => {
             console.error(`[ERROR] tournament.js:setNewTournamentSize ${error}.`);
@@ -45,7 +45,7 @@ function setNewTournamentSize() {
 }
 
 function getNextTournamentSize() {
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         var sql = "SELECT `participants` FROM `tournament`;";
 
         db.query(sql).then(rows => resolve(rows[0].participants)).catch(error => {
@@ -55,28 +55,31 @@ function getNextTournamentSize() {
     });
 }
 
-export async function checkMatches(level, res) {
-    const minimumUsers = await getNextTournamentSize();
-    const totalUsers = await tournamentContract.methods.getTotalUsersByLevel(level).call();
+export async function initCheckMatches(level, res) {
+    res.status(200).json(await checkMatches(level));
+}
 
-    if (totalUsers < minimumUsers) return res.status(200).json({ message: 'Not enough users.', succeed: false });
+function checkMatches(level) {
+    return new Promise(async (resolve, reject) => {
+        const minimumUsers = await getNextTournamentSize();
+        const totalUsers = await tournamentContract.methods.getTotalUsersByLevel(level).call();
 
-    const animalIds = Array(minimumUsers).fill(0);
-    let allUsers = await tournamentContract.methods.getUsersByLevel(level, 0, 0).call();
-    const users = animalIds.map(() => {
-        let userIndex = random(allUsers.length);
-        let user = allUsers[userIndex];
-        allUsers.splice(userIndex, 1);
-        return user;
+        if (totalUsers < minimumUsers) return resolve({ message: 'Not enough users.', succeed: false });
+
+        let allUsers = Object.values(await tournamentContract.methods.getUsersByLevel(level, 0, 0).call());
+        const users = Array(minimumUsers).fill(0).map(() => {
+            let userIndex = random(allUsers.length);
+            return allUsers.splice(userIndex, 1)[0];
+        });
+        const animalIds = await tournamentContract.methods.getUsersWaitingListByLevel(level, users, Array(minimumUsers).fill(0)).call();
+
+        checkTransactionTime();
+        if (!Transaction.processing) {
+            makeMatches(level, animalIds)
+                .then(() => resolve({ succeed: true }))
+                .catch(error => resolve({ message: `${error}`, succeed: false }));
+        } else resolve({ message: 'Transaction already pending.', succeed: false });
     });
-    const animalIds = await tournamentContract.methods.getUsersWaitingListByLevel(level, users, Array(MINIMUM_PARTICIPANTS).fill(0)).call();
-
-    checkTransactionTime();
-    if (!Transaction.processing) {
-        makeMatches(level, animalIds, res)
-            .then(() => res.status(200).json({ succeed: true }))
-            .catch(error => res.status(200).json({ message: `${error}`, succeed: false }));
-    } else res.status.json({ message: 'Transaction already pending.', succeed: false });
 }
 
 function checkTransactionTime() {
@@ -137,6 +140,6 @@ function makeMatches(level, animalIds) {
     });
 }
 
-const tournament = { checkMatches };
+const tournament = { initCheckMatches };
 
 export default tournament;

@@ -383,6 +383,25 @@ const abi = [
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "_index",
+				"type": "uint256"
+			}
+		],
+		"name": "getRewardRates",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "bytes32",
 				"name": "role",
 				"type": "bytes32"
@@ -652,7 +671,7 @@ const abi = [
 						"type": "uint80"
 					}
 				],
-				"internalType": "struct IArena.Costs",
+				"internalType": "struct ITournament.Costs",
 				"name": "costs",
 				"type": "tuple"
 			},
@@ -779,6 +798,30 @@ const abi = [
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "rewardRates",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "_address",
 				"type": "address"
@@ -853,7 +896,7 @@ const abi = [
 						"type": "uint80"
 					}
 				],
-				"internalType": "struct IArena.Costs",
+				"internalType": "struct ITournament.Costs",
 				"name": "_costs",
 				"type": "tuple"
 			},
@@ -864,6 +907,24 @@ const abi = [
 			}
 		],
 		"name": "setLevel",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_rewardRateId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_rewardRates",
+				"type": "uint256[]"
+			}
+		],
+		"name": "setRewardRates",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"

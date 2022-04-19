@@ -31,26 +31,30 @@ function random(max, min = 0) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-export async function checkMatches(level, res) {
-    const totalUsers = await arenaContract.methods.getTotalUsersByLevel(level).call();
+export async function initCheckMatches(level, res) {
+    res.status(200).json(await checkMatches(level));
+}
 
-    if (totalUsers < MINIMUM_PARTICIPANTS) return res.status(200).json({ message: 'Not enough users.', succeed: false });
+function checkMatches(level) {
+    return new Promise(async (resolve, reject) => {
+        const totalUsers = await arenaContract.methods.getTotalUsersByLevel(level).call();
 
-    let allUsers = await arenaContract.methods.getUsersByLevel(level, 0, 0).call();
-    const users = animalIds.map(() => {
-        let userIndex = random(allUsers.length);
-        let user = allUsers[userIndex];
-        allUsers.splice(userIndex, 1);
-        return user;
+        if (totalUsers < MINIMUM_PARTICIPANTS) return resolve({ message: 'Not enough users.', succeed: false });
+
+        let allUsers = Object.values(await arenaContract.methods.getUsersByLevel(level, 0, 0).call());
+        const users = Array(MINIMUM_PARTICIPANTS).fill(0).map(() => {
+            let userIndex = random(allUsers.length);
+            return allUsers.splice(userIndex, 1)[0];
+        });
+        const animalIds = await arenaContract.methods.getUsersWaitingListByLevel(level, users, Array(MINIMUM_PARTICIPANTS).fill(0)).call();
+
+        checkTransactionTime();
+        if (!Transaction.processing) {
+            makeMatches(level, animalIds)
+                .then(() => resolve({ succeed: true }))
+                .catch(error => resolve({ message: `${error}`, succeed: false }));
+        } else resolve({ message: 'Transaction already pending.', succeed: false });
     });
-    const animalIds = await arenaContract.methods.getUsersWaitingListByLevel(level, users, Array(MINIMUM_PARTICIPANTS).fill(0)).call();
-
-    checkTransactionTime();
-    if (!Transaction.processing) {
-        makeMatches(level, animalIds, res)
-            .then(() => res.status(200).json({ succeed: true }))
-            .catch(error => res.status(200).json({ message: `${error}`, succeed: false }));
-    } else res.status.json({ message: 'Transaction already pending.', succeed: false });
 }
 
 function checkTransactionTime() {
@@ -110,6 +114,6 @@ function makeMatches(level, animalIds) {
     });
 }
 
-const arena = { checkMatches };
+const arena = { initCheckMatches };
 
 export default arena;
