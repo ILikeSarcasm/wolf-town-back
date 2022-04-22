@@ -313,7 +313,7 @@ function makeMatches(gameId, participations) {
                 nonce: web3.utils.toHex(txCount),
                 to: buildingGameAddress,
                 gasLimit: web3.utils.toHex(Math.ceil((await buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).estimateGas({ from: publicKey })) * 1.2)),
-                gasPrice: web3.utils.toHex(web3.utils.toWei(process.env.ENVIRONMENT == dev ? '10' : '5', 'gwei')),
+                gasPrice: web3.utils.toHex(web3.utils.toWei(process.env.ENVIRONMENT == 'dev' ? '10' : '5', 'gwei')),
                 data: buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).encodeABI()
             };
 
