@@ -83,6 +83,7 @@ function generateTokenMetadata(tokenID, data) {
 
                     { trait_type: 'building skill', value: `Level ${data.skills[1].level} (${data.skills[1].points} points)` },
                     { trait_type: 'stealing skill', value: `Level ${data.skills[2].level} (${data.skills[2].points} points)` },
+                    { trait_type: 'fighting skill', value: `Level ${data.skills[3].level} (${data.skills[3].points} points)` },
 
                     ...ownerships
                 ]

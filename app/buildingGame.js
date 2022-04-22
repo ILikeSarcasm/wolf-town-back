@@ -74,7 +74,7 @@ export function getParticipations(gameId, from, to, res) {
 export function getParticipationsByUser(gameId, user, res) {
     var sql = "SELECT `animalId`, `hashedAction`, `nonce` " +
               "FROM `building-game` " +
-              "WHERE `buildingId` = ? AND `user` = ? AND `state` = 'WAITING';";
+              "WHERE `buildingId` = ? AND `user` = ?;";
     var params = [ gameId, user ];
 
     db.query(sql, params).then(rows => {
