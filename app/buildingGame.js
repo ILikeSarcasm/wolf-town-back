@@ -74,7 +74,7 @@ export function getParticipations(gameId, from, to, res) {
 export function getParticipationsByUser(gameId, user, res) {
     var sql = "SELECT `animalId`, `hashedAction`, `nonce` " +
               "FROM `building-game` " +
-              "WHERE `buildingId` = ? AND `user` = ?;";
+              "WHERE `buildingId` = ? AND `user` = ? AND `state` = 'WAITING';";
     var params = [ gameId, user ];
 
     db.query(sql, params).then(rows => {
@@ -313,7 +313,7 @@ function makeMatches(gameId, participations) {
                 nonce: web3.utils.toHex(txCount),
                 to: buildingGameAddress,
                 gasLimit: web3.utils.toHex(Math.ceil((await buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).estimateGas({ from: publicKey })) * 1.2)),
-                gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
+                gasPrice: web3.utils.toHex(web3.utils.toWei(process.env.ENVIRONMENT == dev ? '10' : '5', 'gwei')),
                 data: buildingGameContract.methods.makeMatches(gameId, animalIds, actions, passwords).encodeABI()
             };
 

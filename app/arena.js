@@ -84,7 +84,7 @@ function makeMatches(level, animalIds) {
                 nonce: web3.utils.toHex(txCount),
                 to: arenaAddress,
                 gasLimit: web3.utils.toHex(Math.ceil((await arenaContract.methods.makeMatches(animalIds, hash, signature).estimateGas({ from: publicKey })) * 1.2)),
-                gasPrice: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
+                gasPrice: web3.utils.toHex(web3.utils.toWei(process.env.ENVIRONMENT == dev ? '10' : '5', 'gwei')),
                 data: arenaContract.methods.makeMatches(animalIds, hash, signature).encodeABI()
             };
 
