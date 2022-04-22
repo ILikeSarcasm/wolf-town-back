@@ -157,7 +157,7 @@ async function publishSeedEveryDay() {
         replayAfter(10 * 60 * 1000, publishSeedEveryDay)
     }
 }
-publishSeedEveryDay();
+if (process.env.ENVIRONMENT != 'dev') publishSeedEveryDay();
 const forestExploration = { checkForSeedSpeedUp, touchRound };
 
 export default forestExploration;
