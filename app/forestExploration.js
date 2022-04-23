@@ -136,7 +136,7 @@ async function touchRound(seedIndex, from, userNonce, res) {
 }
 
 async function publishSeedIndex(seedIndex, res) {
-    const seedIndex = BigNumber.from(seedIndex);
+    seedIndex = BigNumber.from(seedIndex);
     const currentIndex = getCurrentIndex();
     const currentJoinSeedIdx = await contract.currentJoinSeedIdx();
     if (seedIndex.gte(currentJoinSeedIdx)) return res.status(200).json({ err: 'lte' });
