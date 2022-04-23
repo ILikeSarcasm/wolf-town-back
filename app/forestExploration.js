@@ -138,10 +138,11 @@ async function touchRound(seedIndex, from, userNonce, res) {
 async function publishSeedIndex(seedIndex, res) {
     seedIndex = BigNumber.from(seedIndex);
     const currentIndex = getCurrentIndex();
+    const forestExplorationContract = await getForestExplorationContract();
+    const contract = getForestExplorationEthersContract(forestExplorationContract._address);
     const currentJoinSeedIdx = await contract.currentJoinSeedIdx();
     if (seedIndex.gte(currentJoinSeedIdx)) return res.status(200).json({ err: 'lte' });
     if (seedIndex.gte(currentIndex)) return res.status(200).json({ err: 'lte' });
-    const forestExplorationContract = await getForestExplorationContract();
     const seed = await contract.seedMap(seedIndex);
     if (seed !== DEFAULT_SEED) return res.status(200).json({ err: 'pub-ed' });
     await publishSeed(forestExplorationContract, seedIndex);
