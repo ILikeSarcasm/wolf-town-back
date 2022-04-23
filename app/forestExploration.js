@@ -135,16 +135,30 @@ async function touchRound(seedIndex, from, userNonce, res) {
     res.status(200).json({ ok: 'reg' });
 }
 
+async function publishSeedIndex(seedIndex, res) {
+    const seedIndex = BigNumber.from(seedIndex);
+    const currentIndex = getCurrentIndex();
+    const currentJoinSeedIdx = await contract.currentJoinSeedIdx();
+    if (seedIndex.gte(currentJoinSeedIdx)) return res.status(200).json({ err: 'lte' });
+    if (seedIndex.gte(currentIndex)) return res.status(200).json({ err: 'lte' });
+    const forestExplorationContract = await getForestExplorationContract();
+    const seed = await contract.seedMap(seedIndex);
+    if (seed !== DEFAULT_SEED) return;
+    await publishSeed(forestExplorationContract, seedIndex);
+    res.status(200).json({ ok: 'pub' });
+}
+
 const BeginTime = new Date('2022-04-09').getTime();
+const getCurrentIndex = () => Math.floor((Date.now() - BeginTime) / 1000 / 60 / 60 / 23); // 23 hours per round
 async function publishSeedEveryDay() {
     const doing = async () => {
         const forestExplorationContract = await getForestExplorationContract();
         const contract = getForestExplorationEthersContract(forestExplorationContract._address);
-        const now = Date.now();
-        const currentIndex = Math.floor((now - BeginTime) / 1000 / 60 / 60 / 23); // 23 hours per round
+        const currentIndex = getCurrentIndex();
         const currentJoinSeedIdx = await contract.currentJoinSeedIdx();
         if (currentJoinSeedIdx.gte(currentIndex)) return;
-        await contract.set_currentJoinSeedIdx(currentIndex);
+        const tx = await contract.set_currentJoinSeedIdx(currentIndex);
+        await tx.wait();
         const seed = await contract.seedMap(currentJoinSeedIdx);
         if (seed !== DEFAULT_SEED) return;
         await publishSeed(forestExplorationContract, currentJoinSeedIdx);
@@ -158,6 +172,6 @@ async function publishSeedEveryDay() {
     }
 }
 if (process.env.ENVIRONMENT != 'dev') publishSeedEveryDay();
-const forestExploration = { checkForSeedSpeedUp, touchRound };
+const forestExploration = { checkForSeedSpeedUp, touchRound, publishSeedIndex };
 
 export default forestExploration;

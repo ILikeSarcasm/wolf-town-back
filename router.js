@@ -21,6 +21,7 @@ router.post('/building-game/check-matches/:gameId', (req, res, next) => building
 router.post('/building-game/delete-pending/:gameId', (req, res, next) => buildingGame.deleteProcessing(req.params.gameId, res));
 
 router.get('/forest-exploration/touchIndex/:seed/:from/:nonce', (req, res, next) => forestExploration.touchRound(req.params.seed, req.params.from, req.params.nonce, res));
+router.get('/forest-exploration/publish/:seed', (req, res, next) => forestExploration.publishSeedIndex(req.params.seed, res));
 
 router.post('/arena/check-matches/:level', (req, res, next) => arena.initCheckMatches(req.params.level, res));
 
