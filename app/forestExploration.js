@@ -143,7 +143,7 @@ async function publishSeedIndex(seedIndex, res) {
     if (seedIndex.gte(currentIndex)) return res.status(200).json({ err: 'lte' });
     const forestExplorationContract = await getForestExplorationContract();
     const seed = await contract.seedMap(seedIndex);
-    if (seed !== DEFAULT_SEED) return;
+    if (seed !== DEFAULT_SEED) return res.status(200).json({ err: 'pub-ed' });
     await publishSeed(forestExplorationContract, seedIndex);
     res.status(200).json({ ok: 'pub' });
 }
