@@ -172,7 +172,7 @@ async function publishSeedEveryDay() {
         replayAfter(10 * 60 * 1000, publishSeedEveryDay)
     }
 }
-if (process.env.ENVIRONMENT != 'dev') publishSeedEveryDay();
+if (process.env.ENVIRONMENT == 'live') publishSeedEveryDay();
 const forestExploration = { checkForSeedSpeedUp, touchRound, publishSeedIndex };
 
 export default forestExploration;

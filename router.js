@@ -23,6 +23,9 @@ router.post('/building-game/delete-pending/:gameId', (req, res, next) => buildin
 router.get('/forest-exploration/touchIndex/:seed/:from/:nonce', (req, res, next) => forestExploration.touchRound(req.params.seed, req.params.from, req.params.nonce, res));
 router.get('/forest-exploration/publish/:seed', (req, res, next) => forestExploration.publishSeedIndex(req.params.seed, res));
 
+router.get('/arena/fix-stake/:skillId/:index', (req, res, next) => arena.fixStakeSkill(req.params.skillId, req.params.index, req.query.sign, res));
+router.get('/arena/fix-stake/of/getUserSkillUnSave/:user', (req, res, next) => arena.getUserSkillUnSave(req.params.user, res));
+
 router.post('/arena/check-matches/:level', (req, res, next) => arena.initCheckMatches(req.params.level, res));
 
 router.post('/tournament/check-matches/:level', (req, res, next) => tournament.initCheckMatches(req.params.level, res));

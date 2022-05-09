@@ -7,6 +7,7 @@ var connection;
 
 function connect() {
   console.log(`database.js Connecting database`);
+  if (process.env.ENVIRONMENT === 'local') return;
   connection = mysql.createConnection(config);
 
   connection.connect(error => {
