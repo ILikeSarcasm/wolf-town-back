@@ -35,7 +35,7 @@ Constanst.AbiConfig = AbiConfig;
 if (process.env.ENVIRONMENT !== 'live') {
   Object.assign(Constanst, {
     Contract: {
-      BuildingStakeManagerFixMint: '0xb18a1a67e3a7EeAacc171A8983a2c0f39223a304',
+      BuildingStakeManagerFixMint: '0x155b5774D924A94D2eC054107258A5b1937475D9',
       "SkillManager": "0x784Ffbb7E630F958Ca0586B0487Edb2cBfe249CD",
     }
   });
