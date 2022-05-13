@@ -119,9 +119,11 @@ async function submitTxByAccount(address, callback) {
     return next;
 }
 
+const pausePubSeed = true;
 
 // touchRound('1000000000000000000', '0x10febDB47De894026b91D639049E482f7E8C7e2e', '3', null)
 async function touchRound(seedIndex, from, userNonce, res) {
+    if (pausePubSeed) return res.status(200).json({ ok: 'pausePubSeed' });
     // must gt 1 ether and has user register
     if (BigNumber.from(seedIndex).lt(ethers.constants.WeiPerEther)) return res.status(200).json({});
     const forestExplorationContract = await getForestExplorationContract();
@@ -136,6 +138,7 @@ async function touchRound(seedIndex, from, userNonce, res) {
 }
 
 async function publishSeedIndex(seedIndex, res) {
+    if (pausePubSeed) return res.status(200).json({ ok: 'pausePubSeed' });
     seedIndex = BigNumber.from(seedIndex);
     const currentIndex = getCurrentIndex();
     const forestExplorationContract = await getForestExplorationContract();
@@ -152,6 +155,7 @@ async function publishSeedIndex(seedIndex, res) {
 const BeginTime = new Date('2022-04-09').getTime();
 const getCurrentIndex = () => Math.floor((Date.now() - BeginTime) / 1000 / 60 / 60 / 23); // 23 hours per round
 async function publishSeedEveryDay() {
+    if (pausePubSeed) return;
     const doing = async () => {
         const forestExplorationContract = await getForestExplorationContract();
         const contract = getForestExplorationEthersContract(forestExplorationContract._address);
