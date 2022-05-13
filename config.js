@@ -20,7 +20,7 @@ else console.log('Running on testnet');
 
 export const Constanst = {
   Contract: {
-    BuildingStakeManagerFixMint: '',
+    BuildingStakeManagerFixMint: '0xc7ba9e206cBE7016F2771C9FFc95702DcbbB257b',
     "SkillManager": "0xAef63919ac27d048d9e0c31da474AD0FEedB141a",
   },
   AbiConfig: {}
